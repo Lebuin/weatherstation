@@ -1,0 +1,24 @@
+version: "3.7"
+
+services:
+  data-receiver:
+    build:
+      context: data-receiver
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./data-receiver:/opt/data-receiver
+    depends_on:
+      - mosquitto
+    env_file:
+      - .env
+
+  mosquitto:
+    image: eclipse-mosquitto:2.0.15
+    restart: always
+    ports:
+      - "1883:1883"
+      - "9001:9001"
+    volumes:
+      - ./mosquitto/config:/mosquitto/config
+      - ./mosquitto/data:/mosquitto/data

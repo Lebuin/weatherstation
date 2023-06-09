@@ -1,0 +1,13 @@
+{
+  "name": "data-receiver",
+  "dockerComposeFile": "../docker-compose.yml",
+  "service": "data-receiver",
+  "workspaceFolder": "/opt/data-receiver",
+  "shutdownAction": "none",
+  "extensions": [
+    "eamodio.gitlens",
+    "ms-python.python",
+    "ms-python.vscode-pylance",
+    "GitHub.copilot"
+  ]
+}
