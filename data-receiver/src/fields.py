@@ -74,4 +74,7 @@ class Pressure(Base):
 
 class Battery(Base):
     def parse(self, data):
-        return int(data) == 1
+        if int(data) == 1:
+            return 'low'
+        else:
+            return ''
