@@ -1,9 +1,8 @@
 from flask import abort, request
 
-from . import fields
-from .app import app
-from .mqtt_client import MQTTClient
-
+import fields
+from app import app
+from mqtt_client import MQTTClient
 
 mqtt_client = MQTTClient(
     host=app.config['MQTT_HOST'],

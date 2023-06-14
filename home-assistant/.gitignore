@@ -1,0 +1,8 @@
+*
+
+!*.yaml
+!.gitignore
+!*.md
+
+!.storage
+!.storage/onboarding

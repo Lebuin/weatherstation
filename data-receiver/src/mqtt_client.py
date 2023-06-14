@@ -1,5 +1,6 @@
-from .app import app
 from paho.mqtt import client as mqtt_client
+
+from app import app
 
 
 class MQTTClient:
