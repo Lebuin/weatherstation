@@ -1,6 +1,14 @@
 version: "3.7"
 
 services:
+  controller:
+    build:
+      context: controller
+    restart: unless-stopped
+    privileged: true
+    depends_on:
+      - mosquitto
+
   data-receiver:
     build:
       context: data-receiver
