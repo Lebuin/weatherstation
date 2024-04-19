@@ -14,3 +14,4 @@ FR_net_wifi_countrycode='BE'
 
 * SSH into the OPI with username orangepi and password orangepi.
 * Install [Docker](https://docs.docker.com/engine/install/ubuntu/)
+* Clone the repo: `git clone https://github.com/Lebuin/weatherstation.git`

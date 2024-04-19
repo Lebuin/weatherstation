@@ -32,14 +32,14 @@ services:
       - ./mosquitto/config:/mosquitto/config
       - ./mosquitto/data:/mosquitto/data
 
-  home-assistant:
-    image: linuxserver/homeassistant:2023.6.1
-    restart: unless-stopped
-    environment:
-      - PUID=1000
-      - PGID=1000
-      - TZ=Europe/Brussels
-    ports:
-      - "8123:8123"
-    volumes:
-      - ./home-assistant:/config
+  # home-assistant:
+  #   image: linuxserver/homeassistant:2023.6.1
+  #   restart: unless-stopped
+  #   environment:
+  #     - PUID=1000
+  #     - PGID=1000
+  #     - TZ=Europe/Brussels
+  #   ports:
+  #     - "8123:8123"
+  #   volumes:
+  #     - ./home-assistant:/config
