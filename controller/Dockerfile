@@ -1,6 +1,9 @@
 FROM ghcr.io/linuxserver/baseimage-alpine:3.18
 
-RUN apk add --no-cache python3
+RUN apk add --no-cache \
+    python3 \
+    py3-pip \
+  && rm -rf /tmp/* /root/.cache
 
 COPY orangepi-release /etc/orangepi-release
 
