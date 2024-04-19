@@ -5,6 +5,7 @@ RUN apk add --no-cache \
     py3-pip \
   && rm -rf /tmp/* /root/.cache
 
+# This is used by the installation script of wiringOP to determine the OPI model
 COPY orangepi-release /etc/orangepi-release
 
 RUN apk add --no-cache --virtual .build-deps \
