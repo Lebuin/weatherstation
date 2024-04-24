@@ -2,12 +2,13 @@ from __future__ import annotations
 
 import wiringpi
 
-from .. import motor, roof
+from .. import motor as _motor
+from .. import roof as _roof
 from .base import MotorIO
 
 
 class GPIO(MotorIO):
-    PinConfig = dict[roof.Roof.Orientation, dict[motor.Motor.Direction, int]]
+    PinConfig = dict[_roof.Roof.Orientation, dict[_motor.Motor.Direction, int]]
 
     input_pins: PinConfig
     output_pins: PinConfig
@@ -26,11 +27,17 @@ class GPIO(MotorIO):
                 wiringpi.pinMode(self.output_pins[orientation][direction], wiringpi.OUTPUT)
 
 
-    def _do_read(self, motor: motor.Motor) -> bool:
+    def _do_read(self, motor: _motor.Motor) -> bool:
+        # Temporarily disable all motors except NORTH:OPEN
+        if (
+            motor.orientation == _roof.Roof.Orientation.SOUTH
+            or motor.direction == _motor.Motor.Direction.CLOSE
+        ):
+            return False
         pin = self.input_pins[motor.orientation][motor.direction]
         return wiringpi.digitalRead(pin) == 1
 
 
-    def _do_write(self, motor: motor.Motor, value: bool) -> None:
+    def _do_write(self, motor: _motor.Motor, value: bool) -> None:
         pin = self.output_pins[motor.orientation][motor.direction]
         wiringpi.digitalWrite(pin, 1 if value else 0)
