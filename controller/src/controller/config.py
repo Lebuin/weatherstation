@@ -28,21 +28,21 @@ keys = {
 # The GPIO pins used to connect the input and output signals
 input_pins = {
     roof.Roof.Orientation.NORTH: {
-        motor.Motor.Direction.OPEN: 0,
-        motor.Motor.Direction.CLOSE: 2,
+        motor.Motor.Direction.OPEN: 2,
+        motor.Motor.Direction.CLOSE: 4,
     },
     roof.Roof.Orientation.SOUTH: {
-        motor.Motor.Direction.OPEN: 4,
-        motor.Motor.Direction.CLOSE: 6,
+        motor.Motor.Direction.OPEN: 6,
+        motor.Motor.Direction.CLOSE: 8,
     }
 }
 output_pins = {
     roof.Roof.Orientation.NORTH: {
-        motor.Motor.Direction.OPEN: 1,
-        motor.Motor.Direction.CLOSE: 3,
+        motor.Motor.Direction.OPEN: 3,
+        motor.Motor.Direction.CLOSE: 5,
     },
     roof.Roof.Orientation.SOUTH: {
-        motor.Motor.Direction.OPEN: 5,
-        motor.Motor.Direction.CLOSE: 7,
+        motor.Motor.Direction.OPEN: 7,
+        motor.Motor.Direction.CLOSE: 9,
     }
 }
