@@ -5,8 +5,6 @@ import enum
 from controller import config
 
 from .base import MotorIO
-from .debug import DebugIO
-from .gpio import GPIO
 
 __all__ = (
     'MotorIO',
@@ -22,8 +20,10 @@ class Mode(enum.Enum):
 
 def create(mode: Mode):
     if mode == Mode.GPIO:
+        from .gpio import GPIO
         return GPIO(config.input_pins, config.output_pins)
     elif mode == Mode.DEBUG:
+        from .debug import DebugIO
         return DebugIO(config.keys)
     else:
         raise Exception(f'Unknown mode: {mode}')
