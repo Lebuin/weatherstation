@@ -4,7 +4,7 @@ from datetime import timedelta
 
 from . import motor, motor_io, roof
 
-mode = motor_io.Mode.DEBUG
+mode = motor_io.Mode.GPIO
 
 # The time between polling for inputs
 poll_duration = timedelta(milliseconds=100)
