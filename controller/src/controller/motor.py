@@ -24,6 +24,11 @@ class Motor:
                 raise ValueError
 
 
+    class State(enum.Enum):
+        IDLE = enum.auto()
+        ACTIVE = enum.auto()
+
+
     motor_io: _motor_io.MotorIO
     roof: _roof.Roof
     direction: Direction
@@ -35,6 +40,14 @@ class Motor:
         self.roof = roof
         self.direction = direction
         self.write(False, force=True)
+
+
+    @property
+    def state(self):
+        if self.value:
+            return self.State.ACTIVE
+        else:
+            return self.State.IDLE
 
 
     @property

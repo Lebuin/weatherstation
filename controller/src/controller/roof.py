@@ -15,6 +15,11 @@ class Roof:
         NORTH = enum.auto()
         SOUTH = enum.auto()
 
+    class State(enum.Enum):
+        IDLE = enum.auto()
+        OPENING = enum.auto()
+        CLOSING = enum.auto()
+
 
     motor_io: _motor_io.MotorIO
     orientation: Orientation
@@ -32,6 +37,16 @@ class Roof:
         }
 
 
+    @property
+    def state(self):
+        if self.motors[motor.Motor.Direction.OPEN].state == motor.Motor.State.ACTIVE:
+            return self.State.OPENING
+        elif self.motors[motor.Motor.Direction.CLOSE].state == motor.Motor.State.ACTIVE:
+            return self.State.CLOSING
+        else:
+            return self.State.IDLE
+
+
     def open(self, fraction: float=1) -> None:
         self.do_movement(motor.Motor.Direction.OPEN, fraction)
 
@@ -46,12 +61,17 @@ class Roof:
         self.write_to_motor(direction, True)
 
         delay = fraction * config.roof_movement_duration
-        scheduler.delay(self._end_movement, delay, direction, self.action_counter)
+        scheduler.delay(self._end_movement_after_timeout, delay, self.action_counter)
 
 
-    def _end_movement(self, direction: motor.Motor.Direction, action_counter: int) -> None:
+    def end_movement(self) -> None:
+        self.write_to_motor(motor.Motor.Direction.OPEN, False)
+        self.write_to_motor(motor.Motor.Direction.CLOSE, False)
+
+
+    def _end_movement_after_timeout(self, action_counter: int) -> None:
         if action_counter == self.action_counter:
-            self.write_to_motor(direction, False)
+            self.end_movement()
 
 
     def write_to_motor(self, direction: motor.Motor.Direction, value: bool) -> None:

@@ -5,7 +5,7 @@ import sys
 
 from . import config, motor
 from . import motor_io as _motor_io
-from . import roof
+from . import roof as _roof
 from .scheduler import scheduler
 
 logging.basicConfig(
@@ -16,9 +16,13 @@ logging.basicConfig(
 
 motor_io = _motor_io.create(config.mode)
 roofs = {
-    roof.Roof.Orientation.NORTH: roof.Roof(motor_io, roof.Roof.Orientation.NORTH),
-    roof.Roof.Orientation.SOUTH: roof.Roof(motor_io, roof.Roof.Orientation.SOUTH),
+    _roof.Roof.Orientation.NORTH: _roof.Roof(motor_io, _roof.Roof.Orientation.NORTH),
+    _roof.Roof.Orientation.SOUTH: _roof.Roof(motor_io, _roof.Roof.Orientation.SOUTH),
 }
+
+# We only want each input press to be handled once, so we keep track of which ones we've
+# already sent.
+input_handled: set[motor.Motor] = set()
 
 
 def run():
@@ -30,17 +34,17 @@ def loop():
     scheduler.delay(loop, config.poll_duration)
 
     for roof in roofs.values():
-        motor_open = roof.motors[motor.Motor.Direction.OPEN]
-        motor_close = roof.motors[motor.Motor.Direction.CLOSE]
+        for direction, motor in roof.motors.items():
+            input_ = motor.read()
+            opposite_input = roof.motors[direction.opposite].read()
 
-        motor_open_input = motor_open.read()
-        motor_close_input = motor_close.read()
+            if not input_:
+                input_handled.discard(motor)
 
-        if motor_open_input and motor_close_input:
-            pass
-        elif motor_open_input:
-            roof.open(1)
-        elif motor_close_input:
-            roof.close(1)
+            elif not opposite_input and motor not in input_handled:
+                input_handled.add(motor)
 
-
+                if roof.state == _roof.Roof.State.IDLE:
+                    roof.do_movement(direction)
+                else:
+                    roof.end_movement()
