@@ -32,12 +32,6 @@ class GPIO(MotorIO):
 
 
     def _do_read(self, motor: _motor.Motor) -> bool:
-        # Temporarily disable all motors except NORTH:OPEN
-        if (
-            motor.orientation == _roof.Roof.Orientation.SOUTH
-            or motor.direction == _motor.Motor.Direction.CLOSE
-        ):
-            return False
         pin = self.input_pins[motor.orientation][motor.direction]
         return wiringpi.digitalRead(pin) == 1
 
