@@ -26,6 +26,7 @@ keys = {
 
 
 # The GPIO pins used to connect the input and output signals
+# KEEP THESE IN SYNC WITH setup_pins.sh!
 input_pins = {
     roof.Roof.Orientation.NORTH: {
         motor.Motor.Direction.OPEN: 2,

@@ -21,13 +21,14 @@ class GPIO(MotorIO):
         self.output_pins = output_pins
 
         wiringpi.wiringPiSetup()
-        for orientation in input_pins.keys():
-            for direction in input_pins[orientation].keys():
-                input_pin = self.input_pins[orientation][direction]
-                output_pin = self.output_pins[orientation][direction]
-                wiringpi.pinMode(input_pin, wiringpi.INPUT)
-                wiringpi.pullUpDnControl(input_pin, wiringpi.PUD_DOWN)
-                wiringpi.pinMode(output_pin, wiringpi.OUTPUT)
+        # pullUpDnControl doesn't seem to work, so we set the pin modes in pin_mode.sh instead
+        # for orientation in input_pins.keys():
+        #     for direction in input_pins[orientation].keys():
+        #         input_pin = self.input_pins[orientation][direction]
+        #         output_pin = self.output_pins[orientation][direction]
+        #         wiringpi.pinMode(input_pin, wiringpi.INPUT)
+        #         wiringpi.pullUpDnControl(input_pin, wiringpi.PUD_DOWN)
+        #         wiringpi.pinMode(output_pin, wiringpi.OUTPUT)
 
 
     def _do_read(self, motor: _motor.Motor) -> bool:
