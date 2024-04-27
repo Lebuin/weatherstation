@@ -14,5 +14,3 @@ six==1.16.0
     # via
     #   pynput
     #   python-xlib
-wiringpi==2.60.1
-    # via -r requirements.in
