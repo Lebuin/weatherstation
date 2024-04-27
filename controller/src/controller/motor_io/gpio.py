@@ -25,8 +25,8 @@ class GPIO(MotorIO):
             for direction in input_pins[orientation].keys():
                 input_pin = self.input_pins[orientation][direction]
                 output_pin = self.output_pins[orientation][direction]
-                wiringpi.pullUpDnControl(input_pin, wiringpi.PUD_DOWN)
                 wiringpi.pinMode(input_pin, wiringpi.INPUT)
+                wiringpi.pullUpDnControl(input_pin, wiringpi.PUD_DOWN)
                 wiringpi.pinMode(output_pin, wiringpi.OUTPUT)
 
 
