@@ -4,6 +4,8 @@ services:
       context: controller
     restart: unless-stopped
     privileged: true
+    volumes:
+      - ./controller/src:/app
     depends_on:
       - mosquitto
 
@@ -14,7 +16,7 @@ services:
     ports:
       - "5000:5000"
     volumes:
-      - ./data-receiver/src:/app/data-receiver
+      - ./data-receiver/src:/app
     depends_on:
       - mosquitto
     env_file:

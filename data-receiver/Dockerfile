@@ -10,4 +10,4 @@ COPY root /
 COPY requirements.txt .
 RUN pip install -r requirements.txt
 
-COPY src /app/data-receiver
+COPY src /app

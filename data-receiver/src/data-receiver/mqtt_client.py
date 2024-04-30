@@ -1,6 +1,5 @@
-from paho.mqtt import client as mqtt_client
-
 from app import app
+from paho.mqtt import client as mqtt_client
 
 
 class MQTTClient:
@@ -25,4 +24,4 @@ class MQTTClient:
 
     def publish(self, topic, payload):
         topic = f'{self.topic_prefix}/{topic}'
-        self.client.publish(topic, payload)
+        self.client.publish(topic, payload, retain=True)
