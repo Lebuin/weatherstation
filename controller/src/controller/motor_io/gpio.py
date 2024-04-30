@@ -1,27 +1,44 @@
 from __future__ import annotations
 
+import enum
+from dataclasses import dataclass
+
 import wiringpi
 
 from .. import motor as _motor
 from .. import roof as _roof
 from .base import MotorIO
 
+__all__ = (
+    'GPIO',
+)
+
+
+class PinMode(enum.Enum):
+    ACTIVE_HIGH = enum.auto()
+    ACTIVE_LOW = enum.auto()
+
+@dataclass
+class MotorConfig:
+    input_pin: int
+    output_pin: int
+    pin_mode: PinMode = PinMode.ACTIVE_HIGH
+
 
 class GPIO(MotorIO):
-    PinConfig = dict[_roof.Roof.Orientation, dict[_motor.Motor.Direction, int]]
+    PinMode = PinMode
+    MotorConfig = MotorConfig
+    Config = dict[_roof.Roof.Orientation, dict[_motor.Motor.Direction, MotorConfig]]
 
-    input_pins: PinConfig
-    output_pins: PinConfig
-
-    _initialized = False
+    config: Config
 
 
-    def __init__(self, input_pins: PinConfig, output_pins: PinConfig):
-        self.input_pins = input_pins
-        self.output_pins = output_pins
+    def __init__(self, config: Config):
+        self.config = config
 
         wiringpi.wiringPiSetup()
-        # pullUpDnControl doesn't seem to work, so we set the pin modes in pin_mode.sh instead
+        # pullUpDnControl doesn't seem to work in wiringOP, so we set the pin modes in pin_mode.sh
+        # instead.
         # for orientation in input_pins.keys():
         #     for direction in input_pins[orientation].keys():
         #         input_pin = self.input_pins[orientation][direction]
@@ -32,10 +49,11 @@ class GPIO(MotorIO):
 
 
     def _do_read(self, motor: _motor.Motor) -> bool:
-        pin = self.input_pins[motor.orientation][motor.direction]
+        pin = self.config[motor.orientation][motor.direction].input_pin
         return wiringpi.digitalRead(pin) == 1
 
 
-    def _do_write(self, motor: _motor.Motor, value: bool) -> None:
-        pin = self.output_pins[motor.orientation][motor.direction]
-        wiringpi.digitalWrite(pin, 1 if value else 0)
+    def _do_write(self, motor: _motor.Motor, active: bool) -> None:
+        pin_config = self.config[motor.orientation][motor.direction]
+        pin_value = int(bool(active) ^ (pin_config.pin_mode == PinMode.ACTIVE_LOW))
+        wiringpi.digitalWrite(pin_config.output_pin, pin_value)

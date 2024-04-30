@@ -1,34 +1,47 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
+
 import pynput
 
-from .. import motor, roof
+from .. import motor as _motor
+from .. import roof as _roof
 from .base import MotorIO
+
+__all__ = (
+    'DebugIO',
+)
+
+
+@dataclass
+class MotorConfig:
+    key: str
 
 
 class DebugIO(MotorIO):
-    KeyConfig = dict[roof.Roof.Orientation, dict[motor.Motor.Direction, str]]
-    Values = dict[roof.Roof.Orientation, dict[motor.Motor.Direction, bool]]
+    MotorConfig = MotorConfig
+    Config = dict[_roof.Roof.Orientation, dict[_motor.Motor.Direction, MotorConfig]]
+    Values = dict[_roof.Roof.Orientation, dict[_motor.Motor.Direction, bool]]
 
-    key_config: KeyConfig
+    config: Config
 
     keyboard_listener: pynput.keyboard.Listener
     pressed_keys: set
 
     values: Values = {
-        roof.Roof.Orientation.NORTH: {
-            motor.Motor.Direction.OPEN: False,
-            motor.Motor.Direction.CLOSE: False,
+        _roof.Roof.Orientation.NORTH: {
+            _motor.Motor.Direction.OPEN: False,
+            _motor.Motor.Direction.CLOSE: False,
         },
-        roof.Roof.Orientation.SOUTH: {
-            motor.Motor.Direction.OPEN: False,
-            motor.Motor.Direction.CLOSE: False,
+        _roof.Roof.Orientation.SOUTH: {
+            _motor.Motor.Direction.OPEN: False,
+            _motor.Motor.Direction.CLOSE: False,
         },
     }
 
 
-    def __init__(self, key_config: KeyConfig):
-        self.key_config = key_config
+    def __init__(self, config: Config):
+        self.config = config
         self.keyboard_listener = pynput.keyboard.Listener(
             on_press=self._on_key_press,
             on_release=self._on_key_release,
@@ -51,11 +64,11 @@ class DebugIO(MotorIO):
         return getattr(key, 'char', None)
 
 
-    def _do_read(self, motor: motor.Motor) -> bool:
-        char = self.key_config[motor.orientation][motor.direction]
+    def _do_read(self, motor: _motor.Motor) -> bool:
+        char = self.config[motor.orientation][motor.direction].key
         return char in self.pressed_keys
 
 
-    def _do_write(self, motor: motor.Motor, value: bool) -> None:
-        self.values[motor.orientation][motor.direction] = value
+    def _do_write(self, motor: _motor.Motor, active: bool) -> None:
+        self.values[motor.orientation][motor.direction] = active
 

@@ -19,12 +19,12 @@ class MotorIO(abc.ABC):
         return NotImplemented
 
 
-    def write(self, motor: motor.Motor, value: bool) -> None:
-        action = 'start' if value else 'stop'
+    def write(self, motor: motor.Motor, active: bool) -> None:
+        action = 'start' if active else 'stop'
         logger.info(f'{motor.orientation}:{motor.direction}: {action}')
-        return self._do_write(motor, value)
+        return self._do_write(motor, active)
 
 
     @abc.abstractmethod
-    def _do_write(self, motor: motor.Motor, value: bool) -> None:
+    def _do_write(self, motor: motor.Motor, active: bool) -> None:
         return NotImplemented

@@ -21,9 +21,9 @@ class Mode(enum.Enum):
 def create(mode: Mode):
     if mode == Mode.GPIO:
         from .gpio import GPIO
-        return GPIO(config.input_pins, config.output_pins)
+        return GPIO(config.gpio_config)
     elif mode == Mode.DEBUG:
         from .debug import DebugIO
-        return DebugIO(config.keys)
+        return DebugIO(config.key_config)
     else:
         raise Exception(f'Unknown mode: {mode}')
