@@ -1,15 +1,17 @@
 from __future__ import annotations
 
+import typing
 from dataclasses import dataclass
-
-import pynput
 
 from .. import motor as _motor
 from .. import roof as _roof
 from .base import MotorIO
 
+if typing.TYPE_CHECKING:
+    import pynput
+
 __all__ = (
-    'DebugIO',
+    'KeyboardIO',
 )
 
 
@@ -18,29 +20,19 @@ class MotorConfig:
     key: str
 
 
-class DebugIO(MotorIO):
+class KeyboardIO(MotorIO):
     MotorConfig = MotorConfig
     Config = dict[_roof.Roof.Orientation, dict[_motor.Motor.Direction, MotorConfig]]
-    Values = dict[_roof.Roof.Orientation, dict[_motor.Motor.Direction, bool]]
 
     config: Config
 
     keyboard_listener: pynput.keyboard.Listener
     pressed_keys: set
 
-    values: Values = {
-        _roof.Roof.Orientation.NORTH: {
-            _motor.Motor.Direction.OPEN: False,
-            _motor.Motor.Direction.CLOSE: False,
-        },
-        _roof.Roof.Orientation.SOUTH: {
-            _motor.Motor.Direction.OPEN: False,
-            _motor.Motor.Direction.CLOSE: False,
-        },
-    }
-
 
     def __init__(self, config: Config):
+        import pynput
+
         self.config = config
         self.keyboard_listener = pynput.keyboard.Listener(
             on_press=self._on_key_press,
@@ -70,5 +62,5 @@ class DebugIO(MotorIO):
 
 
     def _do_write(self, motor: _motor.Motor, active: bool) -> None:
-        self.values[motor.orientation][motor.direction] = active
-
+        # Do nothing
+        pass

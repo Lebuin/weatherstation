@@ -44,8 +44,7 @@ class Scheduler:
 
 
     def _loop(self):
-        while True:
-            item = self.queue.get()
+        while item:= self.queue.get():
             delay = item.execution_time - datetime.now()
             if delay > timedelta():
                 time.sleep(delay.total_seconds())

@@ -18,3 +18,17 @@ FR_net_wifi_countrycode='BE'
 * Add the line `/home/orangepi/weatherstation/setup_pins.sh` to /etc/rc.local
 * Reboot
 * Run `docker compose up -d` in the weatherstation folder
+
+
+# Development
+
+There are 2 parts to this application:
+
+* `data-receiver` runs a webserver. Every minute the Froggit weather station posts a weather report to this server, which is then translated into a more sensible format and posted on a MQTT topic.
+* `controller` subscribes both to this MQTT topic, and to the status of the 4 physical buttons on the weather station case. Based on these inputs, it controls the 2 motors of the greenhouse.
+
+While developing, the following may come in handy:
+
+* By setting `config.MODE = motor_io.Mode.KEYBOARD`, you can send inputs to `controller` with the keyboard keys a/z/k/m. This only works when the controller is running locally, not inside docker.
+* By setting `config.MODE = motor_io.Mode.MQTT`, you can send inputs to `controller` by sending mqtt messages. This also works when running inside docker. For example, to signal that the north/open button is pressed, you can run `mosquitto_pub -u debug -P debug -t weatherstation/roof/north/open -m 1`. Note that you have to manually depress the button by sending `-t weatherstation/roof/north/open -m 1` before you can "press" it a second time.
+* You can send fake weather reports to `data-receiver`, for example: `curl "localhost:5000/weatherstation/updateweatherstation.php?ID=biotope-serre&PASSWORD=biotope9000&tempf=77.2&humidity=62&dewptf=63.1&windchillf=77.2&winddir=24&windspeedmph=0.00&windgustmph=0.00&rainin=0.000&dailyrainin=0.000&weeklyrainin=0.000&monthlyrainin=0.000&yearlyrainin=-9999&totalrainin=0.000&solarradiation=18.05&UV=0&indoortempf=76.5&indoorhumidity=61&absbaromin=29.867&baromin=29.923&lowbatt=1&dateutc=now&softwaretype=EasyWeatherPro_V5.1.1&action=updateraw&realtime=1&rtfreq=5"`

@@ -3,33 +3,53 @@ from __future__ import annotations
 from datetime import timedelta
 
 from . import motor, motor_io, roof
-from .motor_io.debug import DebugIO
 from .motor_io.gpio import GPIO
+from .motor_io.keyboard import KeyboardIO
+from .motor_io.mqtt import MQTTIO
 
-mode = motor_io.Mode.DEBUG
+MODE = motor_io.Mode.MQTT
 
 # The time between polling for inputs
-poll_duration = timedelta(milliseconds=100)
+POLL_DURATION = timedelta(milliseconds=100)
 # The number of seconds it takes to open/close a roof
-roof_movement_duration = timedelta(seconds=5)
+ROOF_MOVEMENT_DURATION = timedelta(seconds=5)
+
+
+MQTT_HOST = 'mosquitto'
+MQTT_PORT = 1883
+MQTT_CLIENT_ID = 'controller'
+MQTT_USERNAME = 'controller'
+MQTT_PASSWORD = 'Kl7sJuVJnZ33BtW'
+MQTT_TOPIC_PREFIX = 'weatherstation'
 
 
 # The keyboard keys used to input in DEBUG mode
-key_config = {
+KEYBOARD_IO_CONFIG = {
     roof.Roof.Orientation.NORTH: {
-        motor.Motor.Direction.OPEN: DebugIO.MotorConfig(key='a'),
-        motor.Motor.Direction.CLOSE: DebugIO.MotorConfig(key='z'),
+        motor.Motor.Direction.OPEN: KeyboardIO.MotorConfig(key='a'),
+        motor.Motor.Direction.CLOSE: KeyboardIO.MotorConfig(key='z'),
     },
     roof.Roof.Orientation.SOUTH: {
-        motor.Motor.Direction.OPEN: DebugIO.MotorConfig(key='k'),
-        motor.Motor.Direction.CLOSE: DebugIO.MotorConfig(key='m'),
-    }
+        motor.Motor.Direction.OPEN: KeyboardIO.MotorConfig(key='k'),
+        motor.Motor.Direction.CLOSE: KeyboardIO.MotorConfig(key='m'),
+    },
+}
+
+MQTT_IO_CONFIG = {
+    roof.Roof.Orientation.NORTH: {
+        motor.Motor.Direction.OPEN: MQTTIO.MotorConfig(topic='roof/north/open'),
+        motor.Motor.Direction.CLOSE: MQTTIO.MotorConfig(topic='roof/north/close'),
+    },
+    roof.Roof.Orientation.SOUTH: {
+        motor.Motor.Direction.OPEN: MQTTIO.MotorConfig(topic='roof/south/open'),
+        motor.Motor.Direction.CLOSE: MQTTIO.MotorConfig(topic='roof/south/close'),
+    },
 }
 
 
 # The GPIO pins used to connect the input and output signals
 # KEEP THESE IN SYNC WITH setup_pins.sh!
-gpio_config = {
+GPIO_CONFIG = {
     roof.Roof.Orientation.NORTH: {
         motor.Motor.Direction.OPEN: GPIO.MotorConfig(
             input_pin=2,

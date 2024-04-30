@@ -60,7 +60,7 @@ class Roof:
         self.write_to_motor(direction.opposite, False)
         self.write_to_motor(direction, True)
 
-        delay = fraction * config.roof_movement_duration
+        delay = fraction * config.ROOF_MOVEMENT_DURATION
         scheduler.delay(self._end_movement_after_timeout, delay, self.action_counter)
 
 

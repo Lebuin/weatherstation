@@ -6,6 +6,8 @@
 #
 evdev==1.7.0
     # via pynput
+paho-mqtt==2.1.0
+    # via -r requirements.in
 pynput==1.7.6
     # via -r requirements.in
 python-xlib==0.33

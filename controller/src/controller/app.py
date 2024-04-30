@@ -1,12 +1,20 @@
 from __future__ import annotations
 
 import logging
+import signal
 import sys
 
 from . import config, motor
 from . import motor_io as _motor_io
 from . import roof as _roof
+from .graceful_killer import GracefulKiller
 from .scheduler import scheduler
+
+
+def signal_handler(signum, frame):
+    print('Received signal')
+
+signal.signal(signal.SIGTERM, signal_handler)
 
 logging.basicConfig(
     stream=sys.stdout,
@@ -14,7 +22,9 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
 )
 
-motor_io = _motor_io.create(config.mode)
+killer = GracefulKiller()
+
+motor_io = _motor_io.create(config.MODE)
 roofs = {
     _roof.Roof.Orientation.NORTH: _roof.Roof(motor_io, _roof.Roof.Orientation.NORTH),
     _roof.Roof.Orientation.SOUTH: _roof.Roof(motor_io, _roof.Roof.Orientation.SOUTH),
@@ -31,7 +41,12 @@ def run():
 
 
 def loop():
-    scheduler.delay(loop, config.poll_duration)
+    if killer.kill_now:
+        for roof in roofs.values():
+            roof.end_movement()
+        return
+
+    scheduler.delay(loop, config.POLL_DURATION)
 
     for roof in roofs.values():
         for direction, motor in roof.motors.items():

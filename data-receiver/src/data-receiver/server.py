@@ -1,7 +1,6 @@
-from flask import abort, request
-
 import fields
 from app import app
+from flask import abort, request
 from mqtt_client import MQTTClient
 
 mqtt_client = MQTTClient(
@@ -57,10 +56,10 @@ def get_report(request):
 
 def publish_report(report):
     for key, value in report.items():
-        mqtt_client.publish(key, value)
+        mqtt_client.publish(key, value, retain=True)
 
 
-@app.route('/report', methods=['GET'])
+@app.route('/weatherstation/updateweatherstation.php', methods=['GET'])
 def report():
     authorize()
     report = get_report(request)
