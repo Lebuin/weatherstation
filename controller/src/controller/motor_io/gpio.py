@@ -5,8 +5,7 @@ from dataclasses import dataclass
 
 import wiringpi
 
-from .. import motor as _motor
-from .. import roof as _roof
+from .. import util
 from .base import MotorIO
 
 __all__ = (
@@ -19,7 +18,7 @@ class PinMode(enum.Enum):
     ACTIVE_LOW = enum.auto()
 
 @dataclass
-class MotorConfig:
+class MovementConfig:
     input_pin: int
     output_pin: int
     pin_mode: PinMode = PinMode.ACTIVE_HIGH
@@ -27,8 +26,8 @@ class MotorConfig:
 
 class GPIO(MotorIO):
     PinMode = PinMode
-    MotorConfig = MotorConfig
-    Config = dict[_roof.Roof.Orientation, dict[_motor.Motor.Direction, MotorConfig]]
+    MovementConfig = MovementConfig
+    Config = dict[util.Movement, MovementConfig]
 
     config: Config
 
@@ -48,12 +47,12 @@ class GPIO(MotorIO):
         #         wiringpi.pinMode(output_pin, wiringpi.OUTPUT)
 
 
-    def _do_read(self, motor: _motor.Motor) -> bool:
-        pin = self.config[motor.orientation][motor.direction].input_pin
+    def read(self, movement: util.Movement) -> bool:
+        pin = self.config[movement].input_pin
         return wiringpi.digitalRead(pin) == 1
 
 
-    def _do_write(self, motor: _motor.Motor, active: bool) -> None:
-        pin_config = self.config[motor.orientation][motor.direction]
+    def write(self, movement: util.Movement, active: bool) -> None:
+        pin_config = self.config[movement]
         pin_value = int(bool(active) ^ (pin_config.pin_mode == PinMode.ACTIVE_LOW))
         wiringpi.digitalWrite(pin_config.output_pin, pin_value)

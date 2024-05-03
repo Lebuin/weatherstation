@@ -3,8 +3,7 @@ from __future__ import annotations
 import typing
 from dataclasses import dataclass
 
-from .. import motor as _motor
-from .. import roof as _roof
+from .. import util
 from .base import MotorIO
 
 if typing.TYPE_CHECKING:
@@ -16,13 +15,13 @@ __all__ = (
 
 
 @dataclass
-class MotorConfig:
+class MovementConfig:
     key: str
 
 
 class KeyboardIO(MotorIO):
-    MotorConfig = MotorConfig
-    Config = dict[_roof.Roof.Orientation, dict[_motor.Motor.Direction, MotorConfig]]
+    MovementConfig = MovementConfig
+    Config = dict[util.Movement, MovementConfig]
 
     config: Config
 
@@ -56,11 +55,11 @@ class KeyboardIO(MotorIO):
         return getattr(key, 'char', None)
 
 
-    def _do_read(self, motor: _motor.Motor) -> bool:
-        char = self.config[motor.orientation][motor.direction].key
+    def read(self, movement: util.Movement) -> bool:
+        char = self.config[movement].key
         return char in self.pressed_keys
 
 
-    def _do_write(self, motor: _motor.Motor, active: bool) -> None:
+    def write(self, movement: util.Movement, active: bool) -> None:
         # Do nothing
         pass

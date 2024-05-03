@@ -1,16 +1,15 @@
 from __future__ import annotations
 
-import typing
+import logging
 from dataclasses import dataclass
 
-from .. import motor as _motor
-from .. import roof as _roof
-from .base import MotorIO
 from controller.mqtt_client import MQTTClient
-from ..import config as _config
 
-if typing.TYPE_CHECKING:
-    import pynput
+from .. import config as _config
+from .. import util
+from .base import MotorIO
+
+logger = logging.getLogger()
 
 __all__ = (
     'MQTTIO',
@@ -18,59 +17,44 @@ __all__ = (
 
 
 @dataclass
-class MotorConfig:
+class MovementConfig:
     topic: str
 
 
 class MQTTIO(MotorIO):
-    MotorConfig = MotorConfig
-    Config = dict[_roof.Roof.Orientation, dict[_motor.Motor.Direction, MotorConfig]]
+    MovementConfig = MovementConfig
+    Config = dict[util.Movement, MovementConfig]
 
     config: Config
     mqtt_client: MQTTClient
 
-    active_inputs: dict[_roof.Roof.Orientation, dict[_motor.Motor.Direction, bool]]
+    active_inputs: dict[util.Movement, bool]
 
 
     def __init__(self, config: Config):
         self.config = config
-        self.mqtt_client = MQTTClient(
-            host=_config.MQTT_HOST,
-            port=_config.MQTT_PORT,
-            client_id=_config.MQTT_CLIENT_ID,
-            username=_config.MQTT_USERNAME,
-            password=_config.MQTT_PASSWORD,
-            topic_prefix=_config.MQTT_TOPIC_PREFIX
-        )
+        self.mqtt_client = MQTTClient()
 
         self.active_inputs = {
-            _roof.Roof.Orientation.NORTH: {
-                _motor.Motor.Direction.OPEN: False,
-                _motor.Motor.Direction.CLOSE: False,
-            },
-            _roof.Roof.Orientation.SOUTH: {
-                _motor.Motor.Direction.OPEN: False,
-                _motor.Motor.Direction.CLOSE: False,
-            },
+            movement: False
+            for movement in util.Movement
         }
 
-        for roof_configs in config.values():
-            for motor_config in roof_configs.values():
-                self.mqtt_client.subscribe(motor_config.topic, self._on_mqtt_message)
+        for movement_config in self.config.values():
+            self.mqtt_client.subscribe(movement_config.topic, self._on_mqtt_message)
 
 
     def _on_mqtt_message(self, topic, payload):
-        for orientation in self.config.keys():
-            for direction, motor_config in self.config[orientation].items():
-                if motor_config.topic == topic:
-                    self.active_inputs[orientation][direction] = (payload != '0')
+        for movement, movement_config in self.config.items():
+                if movement_config.topic == topic:
+                    self.active_inputs[movement] = (payload != '0')
 
 
-    def _do_read(self, motor: _motor.Motor) -> bool:
-        return self.active_inputs[motor.orientation][motor.direction]
+    def read(self, movement: util.Movement) -> bool:
+        return self.active_inputs[movement]
 
 
-    def _do_write(self, motor: _motor.Motor, active: bool) -> None:
+    def write(self, movement: util.Movement, active: bool) -> None:
         # Do nothing
         pass
 

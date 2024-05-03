@@ -4,15 +4,25 @@
 #
 #    pip-compile
 #
+certifi==2024.2.2
+    # via requests
+charset-normalizer==3.3.2
+    # via requests
 evdev==1.7.0
     # via pynput
+idna==3.7
+    # via requests
 paho-mqtt==2.1.0
     # via -r requirements.in
 pynput==1.7.6
     # via -r requirements.in
 python-xlib==0.33
     # via pynput
+requests==2.31.0
+    # via -r requirements.in
 six==1.16.0
     # via
     #   pynput
     #   python-xlib
+urllib3==2.2.1
+    # via requests
