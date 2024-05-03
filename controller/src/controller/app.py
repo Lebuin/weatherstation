@@ -30,11 +30,6 @@ def loop():
         # This doesn't work yet. Our script never seems to receive the SIGTERM signal that docker sends
         # when it wants the container to shut down. Not sure why, we need to investigate this.
         if killer.kill_now:
-            controller.close_roofs()
             break
 
-        try:
-            controller.tick()
-        except Exception as e:
-            controller.close_roofs()
-            raise e
+        controller.tick()

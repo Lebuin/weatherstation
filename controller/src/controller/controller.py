@@ -85,7 +85,7 @@ class Controller:
             if emergency != Emergency.NONE:
                 logger.info(f'We are in emergency {emergency}, keeping all roofs closed from now on')
             else:
-                logger.info(f'Emergency {emergency} is over')
+                logger.info(f'Emergency {self.emergency} is over')
         self.emergency = emergency
 
         return self.emergency

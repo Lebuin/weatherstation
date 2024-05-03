@@ -14,8 +14,8 @@ MIN_INDOOR_TEMPERATURE = 20  # ˚C
 MAX_INDOOR_TEMPERATURE = 25  # ˚C
 # If the temperature inside the greenhouse is too high/low, we will open/close the roofs in steps
 # of AUTO_MOVEMENT_FRACTION, and wait for AUTO_MOVEMENT_CURFEW between actions. So if the fraction
-# is .2 and the curfew is 5 minutes, it takes at least 25 minutes to fully open/close the roofs.
-AUTO_MOVEMENT_FRACTION = .2
+# is .25 and the curfew is 5 minutes, it takes at least 20 minutes to fully open/close the roofs.
+AUTO_MOVEMENT_FRACTION = .25
 AUTO_MOVEMENT_CURFEW = timedelta(minutes=5)
 # When someone interacts with the roofs manually, we wait a while before responding to low/high
 # temperatures again.
@@ -51,10 +51,10 @@ MQTT_REPORT_TOPIC = 'report'
 
 
 # Debug values
+# MODE = util.Mode.MQTT
 # WEATHER_REPORT_VALIDITY = timedelta(minutes=3)
 # AUTO_MOVEMENT_CURFEW = timedelta(minutes=1)
 # MANUAL_MOVEMENT_CURFEW = timedelta(minutes=2)
-# TICK_INTERVAL = timedelta(seconds=1)
 # ROOF_MOVEMENT_DURATION = timedelta(seconds=10)
 # HEALTHCHECK_INTERVAL = timedelta(minutes=1)
 

@@ -44,6 +44,19 @@ class MotorController:
     def __init__(self):
         self.motor_io = _motor_io.create(config.MODE)
 
+        for orientation in util.Orientation:
+            for direction in util.Direction:
+                self.write(util.Movement(orientation, direction), False)
+
+
+    def __del__(self):
+        logger.debug('MotorController is being deleted, closing all roofs')
+        self.current_action = None
+        self.next_action = None
+        for orientation in util.Orientation:
+            self.write(util.Movement(orientation, util.Direction.OPEN), False)
+            self.write(util.Movement(orientation, util.Direction.CLOSE), True)
+
 
     def read(self, movement: util.Movement) -> bool:
         return self.motor_io.read(movement)

@@ -1,6 +1,11 @@
 #!/usr/bin/with-contenv bash
 # shellcheck shell=bash
 
+# Our script doesn't really have a ready status, so we just write the readiness here instead of
+# fiddling with s6-notifyoncheck
+echo "" >&3
+exec 3>&-
+
 # We deliberately don't use s6-setuidgid here: I haven't found a way to get the abc user to use
 # GPIO
 exec cd /app python3 -m controller
