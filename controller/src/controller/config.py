@@ -33,7 +33,7 @@ WEATHER_REPORT_VALIDITY = timedelta(minutes=30)
 # The time between application ticks
 TICK_INTERVAL = timedelta(milliseconds=100)
 # The number of seconds it takes to open/close a roof
-ROOF_MOVEMENT_DURATION = timedelta(seconds=60)
+ROOF_MOVEMENT_DURATION = timedelta(seconds=160)
 # We periodically send a ping to healthchecks.io to let it know the script is still running. If
 # healthchecks.io doesn't get an update from us for x amount of time, it will notify people on
 # their phones. In known emergency situations, we explicitly send a nonzero status.
