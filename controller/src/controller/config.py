@@ -81,21 +81,21 @@ GPIO_CONFIG = {
     util.Movement(util.Orientation.NORTH, util.Direction.OPEN): GPIO.MovementConfig(
         input_pin=2,
         output_pin=3,
-        pin_mode=GPIO.PinMode.ACTIVE_HIGH,
+        pin_mode=GPIO.PinMode.ACTIVE_LOW,
     ),
     util.Movement(util.Orientation.NORTH, util.Direction.CLOSE): GPIO.MovementConfig(
         input_pin=4,
         output_pin=5,
-        pin_mode=GPIO.PinMode.ACTIVE_LOW,
+        pin_mode=GPIO.PinMode.ACTIVE_HIGH,
     ),
     util.Movement(util.Orientation.SOUTH, util.Direction.OPEN): GPIO.MovementConfig(
         input_pin=6,
         output_pin=7,
-        pin_mode=GPIO.PinMode.ACTIVE_HIGH,
+        pin_mode=GPIO.PinMode.ACTIVE_LOW,
     ),
     util.Movement(util.Orientation.SOUTH, util.Direction.CLOSE): GPIO.MovementConfig(
         input_pin=8,
         output_pin=9,
-        pin_mode=GPIO.PinMode.ACTIVE_LOW,
+        pin_mode=GPIO.PinMode.ACTIVE_HIGH,
     ),
 }

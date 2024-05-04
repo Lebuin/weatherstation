@@ -2,7 +2,20 @@
 
 * Download the most recent [Ubuntu image](https://drive.google.com/drive/folders/1KzyzyByev-fpZat7yvgYz1omOqFFqt1k)
 * Flash it to an SD card using [balenaEtcher](https://etcher.balena.io/#download-etcher)
-* Set up the Wifi network to connect to on first boot: Navigate to the /boot folder of the SD card, copy the file `orangepi_first_run.txt.template` to `orangepi_first_run.txt`, and set the following options:
+* Set up the network to connect to on first boot:
+* Set up the Wifi network to connect to on first boot: Navigate to the /boot folder of the SD card, copy the file `orangepi_first_run.txt.template` to `orangepi_first_run.txt`, and set the following options for ethernet (assuming you will install the OrangePi directly in the greenhouse, otherwise adjust the ip address accordingly):
+
+```
+FR_net_change_defaults=1
+FR_net_ethernet_enabled=1
+FR_net_wifi_enabled=0
+FR_net_use_static=1
+FR_net_static_ip='10.9.10.5'
+FR_net_static_mask='255.255.255.0'
+FR_net_static_gateway='10.9.10.254'
+```
+
+Or the following options for Wifi:
 
 ```
 FR_net_change_defaults=1
@@ -12,7 +25,10 @@ FR_net_wifi_key=<password>
 FR_net_wifi_countrycode='BE'
 ```
 
+* Put the SD card into the OPI and boot it.
 * SSH into the OPI with username orangepi and password orangepi.
+* Run `sudo sed -i.bak -e 's/mirrors.tuna.tsinghua.edu.cn/mirrors.ocf.berkeley.edu/g' /etc/apt/sources.list` to switch to a faster mirror for apt.
+* Install [WiringOP](https://github.com/orangepi-xunlong/wiringOP)
 * Install [Docker](https://docs.docker.com/engine/install/ubuntu/)
 * Clone the repo: `git clone https://github.com/Lebuin/weatherstation.git`
 * Add the line `/home/orangepi/weatherstation/setup_pins.sh` to /etc/rc.local

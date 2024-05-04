@@ -16,7 +16,7 @@
 for pin in 2 4 6 8;
 do
     gpio mode $pin in
-    gpio mode $pin down
+    gpio mode $pin up
 done
 for pin in 3 5 7 9;
 do
