@@ -54,7 +54,6 @@ class MotorController:
         self.current_action = None
         self.next_action = None
         for orientation in util.Orientation:
-            self.write(util.Movement(orientation, util.Direction.OPEN), False)
             self.write(util.Movement(orientation, util.Direction.CLOSE), True)
 
 
@@ -64,9 +63,14 @@ class MotorController:
     def write(self, movement: util.Movement, active: bool) -> None:
         if active:
             logger.info(f'Start motor: {movement}')
+            self.motor_io.write(
+                util.Movement(movement.orientation, movement.direction.opposite),
+                False,
+            )
         else:
             logger.info(f'Stop motor: {movement}')
-        return self.motor_io.write(movement, active)
+
+        self.motor_io.write(movement, active)
 
 
     def do_action(self, movement: util.Movement, fraction: float=1) -> None:
