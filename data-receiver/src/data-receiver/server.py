@@ -66,7 +66,7 @@ def publish_report(report):
     )
 
 
-@app.route('/weatherstation/updateweatherstation.php', methods=['GET'])
+@app.route('/report', methods=['GET'])
 def report():
     authorize()
     report = get_report(request)
