@@ -74,9 +74,12 @@ class Controller:
 
 
     def update_emergency(self) -> Emergency:
-        if not self.weather_monitor.is_receiving or not self.weather_monitor.report:
+        if self.weather_monitor.is_offline:
             emergency = Emergency.WEATHERSTATION_OFFLINE
-        elif self.weather_monitor.report['outdoor_wind_gust'] > config.HIGH_WIND:
+        elif (
+            self.weather_monitor.report
+            and self.weather_monitor.report['outdoor_wind_gust'] > config.HIGH_WIND
+        ):
             emergency = Emergency.HIGH_WIND
         else:
             emergency = Emergency.NONE

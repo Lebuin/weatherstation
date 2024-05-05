@@ -4,6 +4,8 @@ from datetime import datetime
 from . import config
 from .mqtt_client import MQTTClient
 
+startup_time = datetime.now()
+
 
 class WeatherMonitor:
     mqtt_client: MQTTClient
@@ -19,6 +21,13 @@ class WeatherMonitor:
     def _on_mqtt_message(self, topic: str, message: str):
         self.report = json.loads(message)
         self.last_report_time = datetime.now()
+
+    @property
+    def is_offline(self) -> bool:
+        if datetime.now() - startup_time < config.WEATHER_REPORT_VALIDITY:
+            return False
+        else:
+            return self.is_receiving
 
 
     @property
