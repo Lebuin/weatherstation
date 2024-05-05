@@ -10,8 +10,8 @@ from .motor_io.mqtt import MQTTIO
 MODE = util.Mode.GPIO
 
 # We want to keep the temperature inside the greenhouse between these values
-MIN_INDOOR_TEMPERATURE = 20  # ˚C
-MAX_INDOOR_TEMPERATURE = 25  # ˚C
+MIN_INDOOR_TEMPERATURE = 22  # ˚C
+MAX_INDOOR_TEMPERATURE = 26  # ˚C
 # If the temperature inside the greenhouse is too high/low, we will open/close the roofs in steps
 # of AUTO_MOVEMENT_FRACTION, and wait for AUTO_MOVEMENT_CURFEW between actions. So if the fraction
 # is .25 and the curfew is 5 minutes, it takes at least 20 minutes to fully open/close the roofs.
