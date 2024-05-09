@@ -27,13 +27,14 @@ FR_net_wifi_countrycode='BE'
 
 * Put the SD card into the OPI and boot it.
 * SSH into the OPI with username orangepi and password orangepi.
-* Run `sudo sed -i.bak -e 's/mirrors.tuna.tsinghua.edu.cn/mirrors.ocf.berkeley.edu/g' /etc/apt/sources.list` to switch to a faster mirror for apt.
-* Install [WiringOP](https://github.com/orangepi-xunlong/wiringOP)
-* Install [Docker](https://docs.docker.com/engine/install/ubuntu/)
-* Clone the repo: `git clone https://github.com/Lebuin/weatherstation.git`
-* Add the line `/home/orangepi/weatherstation/setup_pins.sh` to /etc/rc.local
-* Reboot
-* Run `docker compose up -d` in the weatherstation folder
+* Set the timezone `sudo timedatectl set-timezone Europe/Brussels`.
+* Switch to a faster apt mirror: `sudo sed -i.bak -e 's/mirrors.tuna.tsinghua.edu.cn/mirrors.ocf.berkeley.edu/g' /etc/apt/sources.list`.
+* Install [WiringOP](https://github.com/orangepi-xunlong/wiringOP).
+* Install [Docker](https://docs.docker.com/engine/install/ubuntu/).
+* Clone the repo: `git clone https://github.com/Lebuin/weatherstation.git`.
+* Add the line `/home/orangepi/weatherstation/setup_pins.sh` to /etc/rc.local.
+* Reboot.
+* Run `docker compose up -d` in the weatherstation folder.
 
 
 # Development
@@ -47,4 +48,4 @@ While developing, the following may come in handy:
 
 * By setting `config.MODE = motor_io.Mode.KEYBOARD`, you can send inputs to `controller` with the keyboard keys a/z/k/m. This only works when the controller is running locally, not inside docker.
 * By setting `config.MODE = motor_io.Mode.MQTT`, you can send inputs to `controller` by sending mqtt messages. This also works when running inside docker. For example, to signal that the north/open button is pressed, you can run `mosquitto_pub -u debug -P debug -t weatherstation/roof/north/open -m 1`. Note that you have to manually depress the button by sending `-t weatherstation/roof/north/open -m 1` before you can "press" it a second time.
-* You can send fake weather reports to `data-receiver`, for example: `curl "localhost:5000/weatherstation/updateweatherstation.php?ID=biotope-serre&PASSWORD=biotope9000&tempf=77.2&humidity=62&dewptf=63.1&windchillf=77.2&winddir=24&windspeedmph=0.00&windgustmph=0.00&rainin=0.000&dailyrainin=0.000&weeklyrainin=0.000&monthlyrainin=0.000&yearlyrainin=-9999&totalrainin=0.000&solarradiation=18.05&UV=0&indoortempf=76.5&indoorhumidity=61&absbaromin=29.867&baromin=29.923&lowbatt=1&dateutc=now&softwaretype=EasyWeatherPro_V5.1.1&action=updateraw&realtime=1&rtfreq=5"`
+* You can send fake weather reports to `data-receiver`, for example: `curl "localhost:5000/report?ID=biotope-serre&PASSWORD=biotope9000&tempf=77.2&humidity=62&dewptf=63.1&windchillf=77.2&winddir=24&windspeedmph=0.00&windgustmph=0.00&rainin=0.000&dailyrainin=0.000&weeklyrainin=0.000&monthlyrainin=0.000&yearlyrainin=-9999&totalrainin=0.000&solarradiation=18.05&UV=0&indoortempf=76.5&indoorhumidity=61&absbaromin=29.867&baromin=29.923&lowbatt=1&dateutc=now&softwaretype=EasyWeatherPro_V5.1.1&action=updateraw&realtime=1&rtfreq=5"`

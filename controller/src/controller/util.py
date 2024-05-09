@@ -26,6 +26,13 @@ class Direction(enum.Enum):
         else:
             raise ValueError
 
+    @property
+    def sign(self):
+        if self == self.OPEN:
+            return 1
+        else:
+            return -1
+
 
 class MovementMetaclass(type):
     def __iter__(cls):
@@ -43,6 +50,21 @@ class Movement(metaclass=MovementMetaclass):
 
     def __eq__(self, other):
         return self.orientation == other.orientation and self.direction == other.direction
+
+    def __str__(self):
+        return f'{self.orientation}:{self.direction}'
+
+
+    @property
+    def opposite(self):
+        return Movement(self.orientation, self.direction.opposite)
+
+
+@dataclass
+class PositionStep:
+    position: float
+    min_temperature: float
+    max_temperature: float
 
 
 class Singleton(type):

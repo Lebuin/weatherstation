@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 import requests
 
 from . import config, util
-from .motor_controller import MotorController, MotorState
+from .motor_controller import MotorController
 from .weather_monitor import WeatherMonitor
 
 logger = logging.getLogger(__name__)
@@ -42,22 +42,11 @@ class Controller:
         self.motor_controller.tick()
 
         self.update_emergency()
-        if self.emergency != Emergency.NONE:
-            self.do_emergency_movements()
-        else:
+        if self.emergency == Emergency.NONE:
             self.do_manual_movements()
             self.do_auto_movements()
 
         self.send_healthcheck()
-
-
-    def do_movement(self, direction: util.Direction, fraction: float=1):
-        for orientation in util.Orientation:
-            movement = util.Movement(orientation, direction)
-            self.motor_controller.do_action(movement, fraction)
-
-    def close_roofs(self):
-        self.do_movement(util.Direction.CLOSE)
 
 
     def curfew_is_ongoing(self, last_event: datetime, curfew: timedelta):
@@ -73,7 +62,7 @@ class Controller:
         return inputs
 
 
-    def update_emergency(self) -> Emergency:
+    def update_emergency(self):
         if self.weather_monitor.is_offline:
             emergency = Emergency.WEATHERSTATION_OFFLINE
         elif (
@@ -86,17 +75,11 @@ class Controller:
 
         if emergency != self.emergency:
             if emergency != Emergency.NONE:
-                logger.info(f'We are in emergency {emergency}, keeping all roofs closed from now on')
+                logger.info(f'We are in emergency {emergency}, closing all roofs')
+                self.motor_controller.ensure_closed()
             else:
                 logger.info(f'Emergency {self.emergency} is over')
         self.emergency = emergency
-
-        return self.emergency
-
-
-    def do_emergency_movements(self):
-        if self.emergency != Emergency.NONE:
-            self.close_roofs()
 
         if self.emergency == Emergency.HIGH_WIND:
             self.last_high_wind = self.weather_monitor.last_report_time
@@ -104,20 +87,42 @@ class Controller:
 
     def do_auto_movements(self) -> None:
         if (
-            self.curfew_is_ongoing(self.last_auto_movement, config.AUTO_MOVEMENT_CURFEW)
-            or self.curfew_is_ongoing(self.last_input, config.MANUAL_MOVEMENT_CURFEW)
+            self.curfew_is_ongoing(self.last_input, config.MANUAL_MOVEMENT_CURFEW)
             or not self.weather_monitor.report
         ):
             return
 
-        if self.weather_monitor.report['indoor_temperature'] > config.MAX_INDOOR_TEMPERATURE:
-            self.do_auto_movement(util.Direction.OPEN)
-        elif self.weather_monitor.report['indoor_temperature'] < config.MIN_INDOOR_TEMPERATURE:
-            self.do_auto_movement(util.Direction.CLOSE)
+        temperature = self.weather_monitor.report['indoor_temperature']
+        for orientation in util.Orientation:
+            for i, step in enumerate(config.POSITION_STEPS[:-1]):
+                if (
+                    self.motor_controller.target_position[orientation] > step.position
+                    and temperature < config.POSITION_STEPS[i + 1].min_temperature
+                ):
+                    logger.info(
+                        f'Temperature {temperature} is too low for roof {orientation} at position '
+                        f'{self.motor_controller.target_position[orientation]:.2f}, closing to '
+                        f'{step.position:.2f}'
+                    )
+                    self.motor_controller.set_target_position(orientation, step.position)
+
+            for i, step in reversed(list(enumerate(config.POSITION_STEPS))[1:]):
+                if (
+                    self.motor_controller.target_position[orientation] < step.position
+                    and temperature > config.POSITION_STEPS[i - 1].max_temperature
+                ):
+                    logger.info(
+                        f'Temperature {temperature} is too high for roof {orientation} at position '
+                        f'{self.motor_controller.target_position[orientation]:.2f}, opening to '
+                        f'{step.position:.2f}'
+                    )
+                    self.motor_controller.set_target_position(orientation, step.position)
+
+        # TODO
 
 
-    def do_auto_movement(self, direction: util.Direction) -> None:
-        self.do_movement(direction, config.AUTO_MOVEMENT_FRACTION)
+    def set_auto_position(self, position: float) -> None:
+        self.motor_controller.set_all_target_positions(position)
         self.last_auto_movement = datetime.now()
 
 
@@ -131,12 +136,24 @@ class Controller:
             elif movement not in self.input_handled:
                 self.input_handled.add(movement)
                 self.last_input = datetime.now()
-                motor_state = self.motor_controller.get_motor_state(movement.orientation)
 
-                if motor_state == MotorState.INACTIVE:
-                    self.motor_controller.do_action(movement)
+                orientation = movement.orientation
+                movement_ongoing = (
+                    self.motor_controller.current_action
+                    and self.motor_controller.current_action.orientation == orientation
+                )
+
+                if movement_ongoing:
+                    logger.info(f'Got manual input, cancelling movement on roof {orientation}')
+                    target_position = self.motor_controller.current_position[orientation]
+                elif movement.direction == util.Direction.OPEN:
+                    logger.info(f'Got manual input, fully opening roof {orientation}')
+                    target_position = 1
                 else:
-                    self.motor_controller.end_action(movement.orientation)
+                    logger.info(f'Got manual input, fully closing roof {orientation}')
+                    target_position = 0
+
+                self.motor_controller.set_target_position(orientation, target_position)
 
 
     def send_healthcheck(self) -> None:

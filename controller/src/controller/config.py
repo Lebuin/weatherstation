@@ -9,14 +9,17 @@ from .motor_io.mqtt import MQTTIO
 
 MODE = util.Mode.GPIO
 
-# We want to keep the temperature inside the greenhouse between these values
-MIN_INDOOR_TEMPERATURE = 23  # ˚C
-MAX_INDOOR_TEMPERATURE = 26  # ˚C
-# If the temperature inside the greenhouse is too high/low, we will open/close the roofs in steps
-# of AUTO_MOVEMENT_FRACTION, and wait for AUTO_MOVEMENT_CURFEW between actions. So if the fraction
-# is .25 and the curfew is 5 minutes, it takes at least 20 minutes to fully open/close the roofs.
-AUTO_MOVEMENT_FRACTION = .34
-AUTO_MOVEMENT_CURFEW = timedelta(minutes=10)
+# Each roof has a position between 0 (closed) and 1 (fully opened). Each position step has a range
+# of temperatures between which it is allowed. For example: if the roofs are at position .2, and
+# the temperature is 24˚C, nothing will happens. As soon as the temperature rises above 25˚C, the
+# roof opens to .5, where it will stay until the temperature rises further above 26˚C, or drops
+# below 22˚C.
+POSITION_STEPS = (
+    util.PositionStep(0, float('-inf'), 25),
+    util.PositionStep(.15, 23, 26),
+    util.PositionStep(.35, 23.5, 27),
+    util.PositionStep(1, 24, float('inf')),
+)
 # When someone interacts with the roofs manually, we wait a while before responding to low/high
 # temperatures again.
 MANUAL_MOVEMENT_CURFEW = timedelta(hours=1)
@@ -34,6 +37,12 @@ WEATHER_REPORT_VALIDITY = timedelta(minutes=30)
 TICK_INTERVAL = timedelta(milliseconds=100)
 # The number of seconds it takes to open/close a roof
 ROOF_MOVEMENT_DURATION = timedelta(seconds=160)
+# We can't measure the true position of a roof, so we rely on an estimate based on how long we've
+# been actuating the motors. If the motors have been actuated outside of our own control, our
+# estimate may be wildly off. So every few hours, when we expect the roof to be fully
+# opened/closed, we let it move in that direction for ROOF_MOVEMENT_DURATION to be sure that it
+# really is fully opened/closed, even if it wasn't before.
+ROOF_VERIFICATION_INTERVAL = timedelta(hours=6)
 # We periodically send a ping to healthchecks.io to let it know the script is still running. If
 # healthchecks.io doesn't get an update from us for x amount of time, it will notify people on
 # their phones. In known emergency situations, we explicitly send a nonzero status.
@@ -51,11 +60,11 @@ MQTT_REPORT_TOPIC = 'report'
 
 
 # Debug values
-# MODE = util.Mode.MQTT
+MODE = util.Mode.MQTT
 # WEATHER_REPORT_VALIDITY = timedelta(minutes=3)
 # AUTO_MOVEMENT_CURFEW = timedelta(minutes=1)
 # MANUAL_MOVEMENT_CURFEW = timedelta(minutes=2)
-# ROOF_MOVEMENT_DURATION = timedelta(seconds=10)
+ROOF_MOVEMENT_DURATION = timedelta(seconds=10)
 # HEALTHCHECK_INTERVAL = timedelta(minutes=1)
 
 

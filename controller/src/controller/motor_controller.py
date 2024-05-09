@@ -13,8 +13,8 @@ logger = logging.getLogger(__name__)
 @dataclass
 class Action:
     movement: util.Movement
-    fraction: float
-    start: datetime | None = None
+    start: datetime
+    is_verification: bool = False
 
     @property
     def orientation(self):
@@ -24,25 +24,30 @@ class Action:
     def direction(self):
         return self.movement.direction
 
-    @property
-    def duration(self):
-        return self.fraction * config.ROOF_MOVEMENT_DURATION
-
-
-class MotorState(enum.Enum):
-    INACTIVE = enum.auto()
-    SCHEDULED = enum.auto()
-    ONGOING = enum.auto()
 
 
 class MotorController:
-    motor_io: _motor_io.MotorIO
-    current_action: Action | None = None
-    next_action: Action | None = None
-
+    last_stable_position: dict[util.Orientation, float]
+    target_position: dict[util.Orientation, float]
+    last_verification: dict[util.Orientation, datetime]
+    current_action: Action | None
 
     def __init__(self):
         self.motor_io = _motor_io.create(config.MODE)
+
+        self.last_stable_position = {
+            util.Orientation.NORTH: 0,
+            util.Orientation.SOUTH: 0,
+        }
+        self.target_position = {
+            util.Orientation.NORTH: 0,
+            util.Orientation.SOUTH: 0,
+        }
+        self.last_verification = {
+            util.Orientation.NORTH: datetime(1, 1, 1),
+            util.Orientation.SOUTH: datetime(1, 1, 1),
+        }
+        self.current_action = None
 
         for orientation in util.Orientation:
             for direction in util.Direction:
@@ -50,9 +55,8 @@ class MotorController:
 
 
     def __del__(self):
-        logger.debug('MotorController is being deleted, closing all roofs')
+        logger.info('MotorController is being deleted, closing all roofs')
         self.current_action = None
-        self.next_action = None
         for orientation in util.Orientation:
             self.write(util.Movement(orientation, util.Direction.CLOSE), True)
 
@@ -62,71 +66,135 @@ class MotorController:
 
     def write(self, movement: util.Movement, active: bool) -> None:
         if active:
-            logger.info(f'Start motor: {movement}')
-            self.motor_io.write(
-                util.Movement(movement.orientation, movement.direction.opposite),
-                False,
-            )
+            self.write(movement.opposite, False)
+
+        if active:
+            logger.info(f'Start motor {movement}')
         else:
-            logger.info(f'Stop motor: {movement}')
+            logger.info(f'Stop motor {movement}')
 
         self.motor_io.write(movement, active)
 
 
-    def do_action(self, movement: util.Movement, fraction: float=1) -> None:
-        if self._can_replace_action(movement, self.current_action):
-            self.current_action = Action(movement, fraction, datetime.now())
-            logger.debug(f'Do action: {self.current_action}')
-            self.write(self.current_action.movement, True)
+    @property
+    def current_position(self) -> dict[util.Orientation, float]:
+        current_position = {}
 
-        elif (
-            self.current_action is not None
-            and self.current_action.orientation != movement.orientation
-            and self._can_replace_action(movement, self.next_action)
-        ):
-            self.next_action = Action(movement, fraction)
-            logger.debug(f'Schedule action: {self.next_action}')
+        for orientation in util.Orientation:
+            position = self.last_stable_position[orientation]
+            if self.current_action and self.current_action.orientation == orientation:
+                duration = datetime.now() - self.current_action.start
+                distance = duration / config.ROOF_MOVEMENT_DURATION
+                position += self.current_action.direction.sign * distance
+            current_position[orientation] = position
 
-
-    def _can_replace_action(self, movement: util.Movement, action: Action | None):
-        return (
-            action is None
-            or action.orientation == movement.orientation
-            and action.direction != movement.direction
-        )
+        return current_position
 
 
-    def end_action(self, orientation: util.Orientation) -> None:
-        if self.current_action and self.current_action.orientation == orientation:
-            self.write(self.current_action.movement, False)
-            self.current_action = None
-
-            if self.next_action:
-                action = self.next_action
-                self.next_action = None
-                self.do_action(action.movement, action.fraction)
-
-        elif self.next_action and self.next_action.orientation == orientation:
-            self.next_action = None
+    def tick(self):
+        self._check_end_current_action()
+        self._check_start_verification()
+        self._check_start_regular_action()
 
 
-    def get_motor_state(self, orientation: util.Orientation) -> MotorState:
-        if self.current_action and self.current_action.orientation == orientation:
-            return MotorState.ONGOING
+    def set_target_position(self, orientation: util.Orientation, position: float):
+        logger.info(f'Set target position of roof {orientation} to {position:.2f}')
+        self.target_position[orientation] = min(max(position, 0), 1)
 
-        elif self.next_action and self.next_action.orientation == orientation:
-            return MotorState.SCHEDULED
+    def set_all_target_positions(self, position: float):
+        for orientation in util.Orientation:
+            self.set_target_position(orientation, position)
+
+
+    def ensure_closed(self):
+        self.set_all_target_positions(0)
+        for orientation in util.Orientation:
+            self.last_verification[orientation] = datetime(1, 1, 1)
+
+
+    def _check_end_current_action(self):
+        if not self.current_action:
+            return
+
+        orientation = self.current_action.orientation
+        current_position = self.current_position[orientation]
+
+        if self.current_action.is_verification:
+            target_position = (
+                self.last_stable_position[orientation]
+                + self.current_action.direction.sign
+            )
 
         else:
-            return MotorState.INACTIVE
+            target_position = self.target_position[orientation]
+            # If the target position is fully closed: let the roof run a few extra seconds. We want
+            # a tight fit when closing the roof, which isn't guaranteed after e.g. opening the roof
+            # for 20 seconds, and then closing it for 20 seconds.
+            if target_position == 0:
+                target_position -= .03
+
+        if (current_position - target_position) * self.current_action.direction.sign >= 0:
+            logger.info(f'Roof {orientation} has reached target position {target_position:.2f}')
+            self._end_action()
 
 
-    def tick(self) -> None:
-        if (
-            self.current_action
-            and (
-                self.current_action.start is None
-                or datetime.now() - self.current_action.start > self.current_action.duration
+    def _check_start_verification(self):
+        for orientation in util.Orientation:
+            if self.current_action:
+                return
+
+            needs_verification = (
+                datetime.now() - self.last_verification[orientation]
+                > config.ROOF_VERIFICATION_INTERVAL
             )
-        ):
-            self.end_action(self.current_action.orientation)
+
+            if needs_verification:
+                if self.current_position[orientation] == 0:
+                    logger.info(f'Verify roof {orientation} by closing')
+                    self._start_action(util.Movement(orientation, util.Direction.CLOSE), True)
+                elif self.current_position[orientation] == 1:
+                    logger.info(f'Verify roof {orientation} by opening')
+                    self._start_action(util.Movement(orientation, util.Direction.OPEN), True)
+
+
+    def _check_start_regular_action(self):
+        for orientation in util.Orientation:
+            if self.current_action:
+                return
+
+            current_position = self.current_position[orientation]
+            target_position = self.target_position[orientation]
+
+            if abs(target_position - current_position) < .01:
+                continue
+
+            if target_position > current_position:
+                logger.info(f'Open roof {orientation} from {current_position:.2f} to {target_position:.2f}')
+                direction = util.Direction.OPEN
+            else:
+                logger.info(f'Close roof {orientation} from {current_position:.2f} to {target_position:.2f}')
+                direction = util.Direction.CLOSE
+
+            movement = util.Movement(orientation, direction)
+            self._start_action(movement)
+
+
+
+    def _start_action(self, movement, is_verification=False):
+        if self.current_action:
+            raise Exception(f'Tried to start an action, but {self.current_action} is ongoing')
+
+        self.current_action = Action(movement, datetime.now(), is_verification=is_verification)
+        if is_verification:
+            self.last_verification[movement.orientation] = datetime.now()
+        self.write(movement, True)
+
+
+    def _end_action(self):
+        if not self.current_action:
+            return
+
+        orientation = self.current_action.orientation
+        self.last_stable_position[orientation] = min(max(self.current_position[orientation], 0), 1)
+        self.write(self.current_action.movement, False)
+        self.current_action = None
