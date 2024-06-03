@@ -58,6 +58,8 @@ MQTT_PASSWORD = 'Kl7sJuVJnZ33BtW'
 MQTT_TOPIC_PREFIX = 'weatherstation'
 MQTT_REPORT_TOPIC = 'report'
 
+SEND_HEALTHCHECKS = True
+
 
 # Debug values
 MODE = util.Mode.MQTT
@@ -65,7 +67,7 @@ MODE = util.Mode.MQTT
 # AUTO_MOVEMENT_CURFEW = timedelta(minutes=1)
 # MANUAL_MOVEMENT_CURFEW = timedelta(minutes=2)
 ROOF_MOVEMENT_DURATION = timedelta(seconds=10)
-# HEALTHCHECK_INTERVAL = timedelta(minutes=1)
+SEND_HEALTHCHECKS = False
 
 
 # The keyboard keys used to input in DEBUG mode

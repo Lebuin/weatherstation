@@ -165,5 +165,6 @@ class Controller:
         if self.emergency != Emergency.NONE:
             url += f'/{self.emergency.value}'
 
-        requests.post(url)
+        if config.SEND_HEALTHCHECKS:
+            requests.post(url)
         logger.debug(f'Sent healthcheck with status {self.emergency.value} ({self.emergency})')
