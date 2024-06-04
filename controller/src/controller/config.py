@@ -62,12 +62,12 @@ SEND_HEALTHCHECKS = True
 
 
 # Debug values
-MODE = util.Mode.MQTT
+# MODE = util.Mode.MQTT
 # WEATHER_REPORT_VALIDITY = timedelta(minutes=3)
 # AUTO_MOVEMENT_CURFEW = timedelta(minutes=1)
 # MANUAL_MOVEMENT_CURFEW = timedelta(minutes=2)
-ROOF_MOVEMENT_DURATION = timedelta(seconds=10)
-SEND_HEALTHCHECKS = False
+# ROOF_MOVEMENT_DURATION = timedelta(seconds=10)
+# SEND_HEALTHCHECKS = False
 
 
 # The keyboard keys used to input in DEBUG mode
