@@ -8,6 +8,8 @@ services:
       - ./controller/src:/app
     depends_on:
       - mosquitto
+    env_file:
+      - .env
 
   data-receiver:
     build:
