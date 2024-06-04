@@ -28,6 +28,7 @@ FR_net_wifi_countrycode='BE'
 * Put the SD card into the OPI and boot it.
 * SSH into the OPI with username orangepi and password orangepi.
 * Set the timezone `sudo timedatectl set-timezone Europe/Brussels`.
+* Set a new password: `passwd`.
 * Switch to a faster apt mirror: `sudo sed -i.bak -e 's/mirrors.tuna.tsinghua.edu.cn/mirrors.ocf.berkeley.edu/g' /etc/apt/sources.list`.
 * Install [WiringOP](https://github.com/orangepi-xunlong/wiringOP).
 * Install [Docker](https://docs.docker.com/engine/install/ubuntu/).
