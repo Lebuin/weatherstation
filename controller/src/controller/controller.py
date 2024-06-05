@@ -138,22 +138,29 @@ class Controller:
                 self.last_input = datetime.now()
 
                 orientation = movement.orientation
+                direction = movement.direction
                 movement_ongoing = (
                     self.motor_controller.current_action
                     and self.motor_controller.current_action.orientation == orientation
                 )
+                current_position = self.motor_controller.current_position[orientation]
 
+                logger.info(f'Got manual input: {movement}')
                 if movement_ongoing:
-                    logger.info(f'Got manual input, cancelling movement on roof {orientation}')
-                    target_position = self.motor_controller.current_position[orientation]
-                elif movement.direction == util.Direction.OPEN:
-                    logger.info(f'Got manual input, fully opening roof {orientation}')
-                    target_position = 1
-                else:
-                    logger.info(f'Got manual input, fully closing roof {orientation}')
-                    target_position = 0
+                    logger.info('Cancel ongoing movement')
+                    self.motor_controller.set_target_position(orientation, current_position)
 
-                self.motor_controller.set_target_position(orientation, target_position)
+                elif (
+                    direction == util.Direction.OPEN and current_position == 1
+                    or direction == util.Direction.CLOSE and current_position == 0
+                ):
+                    self.motor_controller.verify_position(movement)
+
+                elif direction == util.Direction.OPEN:
+                    self.motor_controller.set_target_position(orientation, 1)
+
+                else:
+                    self.motor_controller.set_target_position(orientation, 0)
 
 
     def send_healthcheck(self) -> None:

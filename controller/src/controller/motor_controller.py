@@ -43,10 +43,16 @@ class MotorController:
             util.Orientation.NORTH: 0,
             util.Orientation.SOUTH: 0,
         }
-        self.last_verification = {
-            util.Orientation.NORTH: datetime(1, 1, 1),
-            util.Orientation.SOUTH: datetime(1, 1, 1),
-        }
+        if config.ROOF_VERIFICATION_ON_STARTUP:
+            self.last_verification = {
+                util.Orientation.NORTH: datetime(1, 1, 1),
+                util.Orientation.SOUTH: datetime(1, 1, 1),
+            }
+        else:
+            self.last_verification = {
+                util.Orientation.NORTH: datetime.now(),
+                util.Orientation.SOUTH: datetime.now(),
+            }
         self.current_action = None
 
         for orientation in util.Orientation:
@@ -106,6 +112,15 @@ class MotorController:
             self.set_target_position(orientation, position)
 
 
+    def verify_position(self, orientation: util.Orientation):
+        if self.current_position[orientation] == 0:
+            logger.info(f'Verify roof {orientation} by closing')
+            self._start_action(util.Movement(orientation, util.Direction.CLOSE), True)
+        elif self.current_position[orientation] == 1:
+            logger.info(f'Verify roof {orientation} by opening')
+            self._start_action(util.Movement(orientation, util.Direction.OPEN), True)
+
+
     def ensure_closed(self):
         self.set_all_target_positions(0)
         for orientation in util.Orientation:
@@ -149,12 +164,7 @@ class MotorController:
             )
 
             if needs_verification:
-                if self.current_position[orientation] == 0:
-                    logger.info(f'Verify roof {orientation} by closing')
-                    self._start_action(util.Movement(orientation, util.Direction.CLOSE), True)
-                elif self.current_position[orientation] == 1:
-                    logger.info(f'Verify roof {orientation} by opening')
-                    self._start_action(util.Movement(orientation, util.Direction.OPEN), True)
+                self.verify_position(orientation)
 
 
     def _check_start_regular_action(self):
@@ -165,16 +175,22 @@ class MotorController:
             current_position = self.current_position[orientation]
             target_position = self.target_position[orientation]
 
-            if abs(target_position - current_position) < .01:
+            if abs(target_position - current_position) < .001:
                 continue
 
             if target_position > current_position:
-                logger.info(f'Open roof {orientation} from {current_position:.2f} to {target_position:.2f}')
                 direction = util.Direction.OPEN
+                direction_text = 'Open'
             else:
-                logger.info(f'Close roof {orientation} from {current_position:.2f} to {target_position:.2f}')
                 direction = util.Direction.CLOSE
+                direction_text = 'Close'
 
+            time = abs(target_position - current_position) * config.ROOF_MOVEMENT_DURATION.total_seconds()
+            logger.info(
+                f'{direction_text} roof {orientation} '
+                f'from {current_position:.2f} to {target_position:.2f} '
+                f'({time:.0f}s)'
+            )
             movement = util.Movement(orientation, direction)
             self._start_action(movement)
 

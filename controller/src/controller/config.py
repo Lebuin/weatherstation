@@ -43,6 +43,7 @@ ROOF_MOVEMENT_DURATION = timedelta(seconds=160)
 # opened/closed, we let it move in that direction for ROOF_MOVEMENT_DURATION to be sure that it
 # really is fully opened/closed, even if it wasn't before.
 ROOF_VERIFICATION_INTERVAL = timedelta(hours=6)
+ROOF_VERIFICATION_ON_STARTUP = True
 # We periodically send a ping to healthchecks.io to let it know the script is still running. If
 # healthchecks.io doesn't get an update from us for x amount of time, it will notify people on
 # their phones. In known emergency situations, we explicitly send a nonzero status.
@@ -63,11 +64,12 @@ SEND_HEALTHCHECKS = True
 
 # Debug values
 # MODE = util.Mode.MQTT
+# SEND_HEALTHCHECKS = False
+# ROOF_VERIFICATION_ON_STARTUP = False
+# ROOF_MOVEMENT_DURATION = timedelta(seconds=10)
 # WEATHER_REPORT_VALIDITY = timedelta(minutes=3)
 # AUTO_MOVEMENT_CURFEW = timedelta(minutes=1)
 # MANUAL_MOVEMENT_CURFEW = timedelta(minutes=2)
-# ROOF_MOVEMENT_DURATION = timedelta(seconds=10)
-# SEND_HEALTHCHECKS = False
 
 
 # The keyboard keys used to input in DEBUG mode
