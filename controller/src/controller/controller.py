@@ -63,12 +63,15 @@ class Controller:
 
 
     def update_emergency(self):
-        if self.weather_monitor.is_offline:
-            emergency = Emergency.WEATHERSTATION_OFFLINE
-        elif (
+        if (
             self.weather_monitor.report
             and self.weather_monitor.report['outdoor_wind_gust'] > config.HIGH_WIND
         ):
+            self.last_high_wind = self.weather_monitor.last_report_time
+
+        if self.weather_monitor.is_offline:
+            emergency = Emergency.WEATHERSTATION_OFFLINE
+        elif datetime.now() - self.last_high_wind < config.HIGH_WIND_CURFEW:
             emergency = Emergency.HIGH_WIND
         else:
             emergency = Emergency.NONE
@@ -80,9 +83,6 @@ class Controller:
             else:
                 logger.info(f'Emergency {self.emergency} is over')
         self.emergency = emergency
-
-        if self.emergency == Emergency.HIGH_WIND:
-            self.last_high_wind = self.weather_monitor.last_report_time
 
 
     def do_auto_movements(self) -> None:
@@ -117,8 +117,6 @@ class Controller:
                         f'{step.position:.2f}'
                     )
                     self.motor_controller.set_target_position(orientation, step.position)
-
-        # TODO
 
 
     def set_auto_position(self, position: float) -> None:

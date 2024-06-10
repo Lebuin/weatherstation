@@ -55,6 +55,7 @@ class MotorController:
             }
         self.current_action = None
 
+        logger.info('MotorController is being initialized, stopping all roof movement')
         for orientation in util.Orientation:
             for direction in util.Direction:
                 self.write(util.Movement(orientation, direction), False)
