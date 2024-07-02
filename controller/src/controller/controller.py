@@ -152,7 +152,7 @@ class Controller:
                     direction == util.Direction.OPEN and current_position == 1
                     or direction == util.Direction.CLOSE and current_position == 0
                 ):
-                    self.motor_controller.verify_position(movement)
+                    self.motor_controller.verify_position(orientation)
 
                 elif direction == util.Direction.OPEN:
                     self.motor_controller.set_target_position(orientation, 1)
