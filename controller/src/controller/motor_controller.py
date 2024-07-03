@@ -151,6 +151,9 @@ class MotorController:
 
         if (current_position - target_position) * self.current_action.direction.sign >= 0:
             logger.info(f'Roof {orientation} has reached target position {target_position:.2f}')
+            # If the target position was set out of bounds, we need to fix that here, otherwise the
+            # roof will keep on going forever.
+            self.target_position[orientation] = min(max(target_position, 0), 1)
             self._end_action()
 
 
