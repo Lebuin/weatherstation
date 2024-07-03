@@ -24,7 +24,7 @@ class Controller:
     emergency: Emergency = Emergency.NONE
     # We only want each input press to be handled once, so we keep track of which ones we've
     # already sent.
-    input_handled: set[tuple[util.Orientation, util.Direction]]
+    input_handled: set[util.Movement]
 
     last_input: datetime = datetime(1, 1, 1)
     last_auto_movement: datetime = datetime(1, 1, 1)
@@ -132,33 +132,33 @@ class Controller:
                 self.input_handled.discard(movement)
 
             elif movement not in self.input_handled:
+                logger.info(f'Got manual input: {movement}')
                 self.input_handled.add(movement)
                 self.last_input = datetime.now()
 
                 orientation = movement.orientation
                 direction = movement.direction
-                movement_ongoing = (
-                    self.motor_controller.current_action
-                    and self.motor_controller.current_action.orientation == orientation
-                )
                 current_position = self.motor_controller.current_position[orientation]
+                target_position = self.motor_controller.target_position[orientation]
+                movement_ongoing = (target_position != current_position)
 
-                logger.info(f'Got manual input: {movement}')
                 if movement_ongoing:
                     logger.info('Cancel ongoing movement')
-                    self.motor_controller.set_target_position(orientation, current_position)
-
-                elif (
-                    direction == util.Direction.OPEN and current_position == 1
-                    or direction == util.Direction.CLOSE and current_position == 0
-                ):
-                    self.motor_controller.verify_position(orientation)
+                    target_position = current_position
 
                 elif direction == util.Direction.OPEN:
-                    self.motor_controller.set_target_position(orientation, 1)
+                    if current_position == 1:
+                        target_position = 2
+                    else:
+                        target_position = 1
 
-                else:
-                    self.motor_controller.set_target_position(orientation, 0)
+                elif direction == util.Direction.CLOSE:
+                    if current_position == 0:
+                        target_position = -1
+                    else:
+                        target_position = 0
+
+                self.motor_controller.set_target_position(orientation, target_position)
 
 
     def send_healthcheck(self) -> None:

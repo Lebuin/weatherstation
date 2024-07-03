@@ -1,3 +1,4 @@
+import collections.abc
 import enum
 from dataclasses import dataclass
 
@@ -35,7 +36,7 @@ class Direction(enum.Enum):
 
 
 class MovementMetaclass(type):
-    def __iter__(cls):
+    def __iter__(cls) -> collections.abc.Generator['Movement', None, None]:
         for orientation in Orientation:
             for direction in Direction:
                 yield cls(orientation, direction)

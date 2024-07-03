@@ -22,7 +22,7 @@ POSITION_STEPS = (
 )
 # When someone interacts with the roofs manually, we wait a while before responding to low/high
 # temperatures again.
-MANUAL_MOVEMENT_CURFEW = timedelta(hours=1)
+MANUAL_MOVEMENT_CURFEW = timedelta(hours=2)
 # When we measure high winds outside the greenhouse, we fully close the roofs, and wait for
 # HIGH_WIND_CURFEW to be sure that the "storm" has passed before monitoring the temperature again
 # and possibly opening the roofs as a result.
