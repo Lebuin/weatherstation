@@ -148,6 +148,10 @@ class Controller:
 
                 elif direction == util.Direction.OPEN:
                     if current_position == 1:
+                        # When someone presses the "open" button while we think the roof is
+                        # already fully opened, it may be because in reality it's not fully opened.
+                        # So we set the target position out of bounds to ensure fully opening the
+                        # roof for real.
                         target_position = 2
                     else:
                         target_position = 1

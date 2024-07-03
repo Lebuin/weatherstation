@@ -106,7 +106,7 @@ class MotorController:
 
     def set_target_position(self, orientation: util.Orientation, position: float):
         logger.info(f'Set target position of roof {orientation} to {position:.2f}')
-        self.target_position[orientation] = min(max(position, 0), 1)
+        self.target_position[orientation] = position
 
     def set_all_target_positions(self, position: float):
         for orientation in util.Orientation:
