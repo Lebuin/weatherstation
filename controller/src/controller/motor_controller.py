@@ -123,9 +123,10 @@ class MotorController:
 
 
     def ensure_closed(self):
-        self.set_all_target_positions(0)
+        # We don't simply set target position 0: we want to be really sure that the roofs do a
+        # full closing cycle, even if our estimate of their current position is wrong.
         for orientation in util.Orientation:
-            self.last_verification[orientation] = datetime(1, 1, 1)
+            self.set_target_position(orientation, self.current_position[orientation] - 1)
 
 
     def _check_end_current_action(self):
@@ -134,8 +135,9 @@ class MotorController:
 
         orientation = self.current_action.orientation
         current_position = self.current_position[orientation]
+        is_verification = self.current_action.is_verification
 
-        if self.current_action.is_verification:
+        if is_verification:
             target_position = (
                 self.last_stable_position[orientation]
                 + self.current_action.direction.sign
@@ -146,15 +148,19 @@ class MotorController:
             # If the target position is fully closed: let the roof run a few extra seconds. We want
             # a tight fit when closing the roof, which isn't guaranteed after e.g. opening the roof
             # for 20 seconds, and then closing it for 20 seconds.
-            if target_position == 0:
-                target_position -= .03
+            if target_position <= 0:
+                target_position -= .02
 
         if (current_position - target_position) * self.current_action.direction.sign >= 0:
             logger.info(f'Roof {orientation} has reached target position {target_position:.2f}')
-            # If the target position was set out of bounds, we need to fix that here, otherwise the
-            # roof will keep on going forever.
-            self.target_position[orientation] = min(max(target_position, 0), 1)
             self._end_action()
+
+            if is_verification:
+                self.last_verification[orientation] = datetime.now()
+            else:
+                # If the target position was set out of bounds, we need to fix that here, otherwise
+                # the roof will keep on going forever.
+                self.target_position[orientation] = min(max(target_position, 0), 1)
 
 
     def _check_start_verification(self):
@@ -205,8 +211,6 @@ class MotorController:
             raise Exception(f'Tried to start an action, but {self.current_action} is ongoing')
 
         self.current_action = Action(movement, datetime.now(), is_verification=is_verification)
-        if is_verification:
-            self.last_verification[movement.orientation] = datetime.now()
         self.write(movement, True)
 
 
