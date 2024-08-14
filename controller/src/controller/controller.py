@@ -46,7 +46,10 @@ class Controller:
             self.do_manual_movements()
             self.do_auto_movements()
 
-        self.send_healthcheck()
+        try:
+            self.send_healthcheck()
+        except Exception as e:
+            logger.error(e)
 
 
     def curfew_is_ongoing(self, last_event: datetime, curfew: timedelta):
