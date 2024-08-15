@@ -83,6 +83,10 @@ class MotorController:
         self.motor_io.write(movement, active)
 
 
+    def _get_movement_duration(self, current_position, target_position):
+        return abs(target_position - current_position) * config.ROOF_MOVEMENT_DURATION.total_seconds()
+
+
     @property
     def current_position(self) -> dict[util.Orientation, float]:
         current_position = {}
@@ -115,10 +119,12 @@ class MotorController:
 
     def verify_position(self, orientation: util.Orientation):
         if self.current_position[orientation] == 0:
-            logger.info(f'Verify roof {orientation} by closing')
+            duration = self._get_movement_duration(1, 0)
+            logger.info(f'Verify roof {orientation} by closing ({duration:.0f}s)')
             self._start_action(util.Movement(orientation, util.Direction.CLOSE), True)
         elif self.current_position[orientation] == 1:
-            logger.info(f'Verify roof {orientation} by opening')
+            duration = self._get_movement_duration(0, 1)
+            logger.info(f'Verify roof {orientation} by opening ({duration:.0f}s)')
             self._start_action(util.Movement(orientation, util.Direction.OPEN), True)
 
 
@@ -195,11 +201,11 @@ class MotorController:
                 direction = util.Direction.CLOSE
                 direction_text = 'Close'
 
-            time = abs(target_position - current_position) * config.ROOF_MOVEMENT_DURATION.total_seconds()
+            duration = self._get_movement_duration(current_position, target_position)
             logger.info(
                 f'{direction_text} roof {orientation} '
                 f'from {current_position:.2f} to {target_position:.2f} '
-                f'({time:.0f}s)'
+                f'({duration:.0f}s)'
             )
             movement = util.Movement(orientation, direction)
             self._start_action(movement)
