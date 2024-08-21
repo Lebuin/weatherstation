@@ -15,10 +15,10 @@ MODE = util.Mode.GPIO
 # roof opens to .5, where it will stay until the temperature rises further above 26˚C, or drops
 # below 22˚C.
 POSITION_STEPS = (
-    util.PositionStep(0, float('-inf'), 25),
-    util.PositionStep(.15, 23, 26),
-    util.PositionStep(.35, 23.5, 27),
-    util.PositionStep(1, 24, float('inf')),
+    util.PositionStep(0, float('-inf'), 27),
+    util.PositionStep(.15, 25, 28),
+    util.PositionStep(.35, 25.5, 29),
+    util.PositionStep(1, 26, float('inf')),
 )
 # When someone interacts with the roofs manually, we wait a while before responding to low/high
 # temperatures again.
