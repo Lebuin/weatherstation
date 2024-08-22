@@ -26,8 +26,8 @@ MANUAL_MOVEMENT_CURFEW = timedelta(hours=2)
 # When we measure high winds outside the greenhouse, we fully close the roofs, and wait for
 # HIGH_WIND_CURFEW to be sure that the "storm" has passed before monitoring the temperature again
 # and possibly opening the roofs as a result.
-HIGH_WIND = 40  # km/h
-HIGH_WIND_CURFEW = timedelta(hours=1)
+HIGH_WIND = 45  # km/h
+HIGH_WIND_CURFEW = timedelta(minutes=30)
 # If the last weather report is older than this, we assume the weather station is offline. Since
 # we can't know the outside windspeed anymore, we have to assume the worst and fully close the
 # roofs until we get another weather report.
