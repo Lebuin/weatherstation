@@ -84,6 +84,8 @@ class WeatherForecastFetcher:
             precipitation = hourly.Variables(self.params['hourly'].index('precipitation')).Values(i)  # type: ignore
             shortwave_radiation = hourly.Variables(self.params['hourly'].index('shortwave_radiation')).Values(i)  # type: ignore
 
+            wind_gust += config.WEATHER_FORECAST_WIND_MARGIN
+
             report = WeatherForecast(
                 timestamp=start + i * interval,
                 temperature=temperature,
