@@ -1,3 +1,4 @@
+import dataclasses
 import enum
 import logging
 from datetime import datetime, timedelta
@@ -17,19 +18,27 @@ class Emergency(enum.Enum):
     WEATHERSTATION_OFFLINE = 30
 
 
+@dataclasses.dataclass
+class RainEvent:
+    timestamp: datetime
+    rain_total: float
+
+
 class Controller:
     weather_monitor: WeatherMonitor
     motor_controller: MotorController
 
     emergency: Emergency = Emergency.NONE
     # We only want each input press to be handled once, so we keep track of which ones we've
-    # already sent.
+    # already handled.
     input_handled: set[util.Movement]
 
     last_input: datetime = datetime(1, 1, 1)
-    last_auto_movement: datetime = datetime(1, 1, 1)
     last_high_wind: datetime = datetime(1, 1, 1)
     last_healthcheck: datetime = datetime.now()
+    # This list contains the rain totals for the past hour, with the first element being the most
+    # recent event.
+    rain_history: list[RainEvent] = []
 
 
     def __init__(self):
@@ -40,6 +49,8 @@ class Controller:
 
     def tick(self):
         self.motor_controller.tick()
+
+        self.update_rain_history()
 
         self.update_emergency()
         if self.emergency == Emergency.NONE:
@@ -56,6 +67,28 @@ class Controller:
         return datetime.now() - last_event < curfew
 
 
+    def rain_curfew_is_ongoing(self):
+        if len(self.rain_history) < 2:
+            return False
+
+        rain_fallen = self.rain_history[0].rain_total - self.rain_history[-1].rain_total
+        duration = self.rain_history[0].timestamp - self.rain_history[-1].timestamp
+        rain_rate = rain_fallen / duration.total_seconds() * 3600  # mm per hour
+        rain_threshold = config.RAIN_THRESHOLD / config.RAIN_CURFEW.total_seconds() * 3600
+
+        return rain_rate > rain_threshold
+
+
+    def get_platformed_position(self, position: float) -> float:
+        min_position = 0
+        if self.rain_curfew_is_ongoing():
+            max_position = config.RAIN_MAX_POSITION
+        else:
+            max_position = 1
+
+        return min(max_position, max(min_position, position))
+
+
     def read_inputs(self) -> dict[util.Movement, bool]:
         inputs = {}
 
@@ -63,6 +96,33 @@ class Controller:
             inputs[movement] = self.motor_controller.read(movement)
 
         return inputs
+
+
+    def update_rain_history(self):
+        if not self.weather_monitor.report:
+            return
+
+        timestamp = self.weather_monitor.last_report_time
+        if (
+            len(self.rain_history) > 0
+            and timestamp == self.rain_history[0].timestamp
+        ):
+            return
+
+        rain_event = RainEvent(
+            timestamp=timestamp,
+            rain_total=self.weather_monitor.report['outdoor_rain_total']
+        )
+        self.rain_history.insert(0, rain_event)
+        while self.rain_history[0].timestamp < timestamp - config.RAIN_CURFEW:
+            self.rain_history.pop()
+
+
+        if self.rain_curfew_is_ongoing():
+            for orientation in util.Orientation:
+                if self.motor_controller.target_position[orientation] > config.RAIN_MAX_POSITION:
+                    logger.info(f'It has started raining, closing roof {orientation} to {config.RAIN_MAX_POSITION:.2f}')
+                    self.motor_controller.set_target_position(orientation, config.RAIN_MAX_POSITION)
 
 
     def update_emergency(self):
@@ -98,33 +158,30 @@ class Controller:
         temperature = self.weather_monitor.report['indoor_temperature']
         for orientation in util.Orientation:
             for i, step in enumerate(config.POSITION_STEPS[:-1]):
+                step_position = self.get_platformed_position(step.position)
                 if (
-                    self.motor_controller.target_position[orientation] > step.position
+                    self.motor_controller.target_position[orientation] > step_position
                     and temperature < config.POSITION_STEPS[i + 1].min_temperature
                 ):
                     logger.info(
                         f'Temperature {temperature} is too low for roof {orientation} at position '
                         f'{self.motor_controller.target_position[orientation]:.2f}, closing to '
-                        f'{step.position:.2f}'
+                        f'{step_position:.2f}'
                     )
-                    self.motor_controller.set_target_position(orientation, step.position)
+                    self.motor_controller.set_target_position(orientation, step_position)
 
             for i, step in reversed(list(enumerate(config.POSITION_STEPS))[1:]):
+                step_position = self.get_platformed_position(step.position)
                 if (
-                    self.motor_controller.target_position[orientation] < step.position
+                    self.motor_controller.target_position[orientation] < step_position
                     and temperature > config.POSITION_STEPS[i - 1].max_temperature
                 ):
                     logger.info(
                         f'Temperature {temperature} is too high for roof {orientation} at position '
                         f'{self.motor_controller.target_position[orientation]:.2f}, opening to '
-                        f'{step.position:.2f}'
+                        f'{step_position:.2f}'
                     )
-                    self.motor_controller.set_target_position(orientation, step.position)
-
-
-    def set_auto_position(self, position: float) -> None:
-        self.motor_controller.set_all_target_positions(position)
-        self.last_auto_movement = datetime.now()
+                    self.motor_controller.set_target_position(orientation, step_position)
 
 
     def do_manual_movements(self) -> None:
@@ -147,7 +204,7 @@ class Controller:
 
                 if movement_ongoing:
                     logger.info('Cancel ongoing movement')
-                    target_position = current_position
+                    target_position = self.get_platformed_position(current_position)
 
                 elif direction == util.Direction.OPEN:
                     if current_position == 1:
@@ -157,13 +214,13 @@ class Controller:
                         # roof for real.
                         target_position = 2
                     else:
-                        target_position = 1
+                        target_position = self.get_platformed_position(1)
 
                 elif direction == util.Direction.CLOSE:
                     if current_position == 0:
                         target_position = -1
                     else:
-                        target_position = 0
+                        target_position = self.get_platformed_position(0)
 
                 self.motor_controller.set_target_position(orientation, target_position)
 

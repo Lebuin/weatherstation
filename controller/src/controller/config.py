@@ -28,6 +28,11 @@ MANUAL_MOVEMENT_CURFEW = timedelta(hours=2)
 # and possibly opening the roofs as a result.
 HIGH_WIND = 45  # km/h
 HIGH_WIND_CURFEW = timedelta(minutes=30)
+# When rain has fallen, the roofs should not be allowed to open fully, since this will cause them
+# to leak water into the greenhouse.
+RAIN_THRESHOLD = 2 # mm
+RAIN_CURFEW = timedelta(minutes=60)
+RAIN_MAX_POSITION = .85
 # If the last weather report is older than this, we assume the weather station is offline. Since
 # we can't know the outside windspeed anymore, we have to assume the worst and fully close the
 # roofs until we get another weather report.
