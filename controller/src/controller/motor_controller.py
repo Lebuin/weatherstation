@@ -154,13 +154,12 @@ class MotorController:
         if (current_position - target_position) * self.current_action.direction.sign >= 0:
             logger.info(f'Roof {orientation} has reached target position {target_position:.2f}')
             self._end_action()
+            # If the target position was set out of bounds (e.g. for a verification), we need to
+            # fix that here, otherwise the roof will keep on going forever.
+            self.target_position[orientation] = min(max(target_position, 0), 1)
 
             if is_verification:
                 self.last_verification[orientation] = datetime.now()
-            else:
-                # If the target position was set out of bounds, we need to fix that here, otherwise
-                # the roof will keep on going forever.
-                self.target_position[orientation] = min(max(target_position, 0), 1)
 
 
     def _check_start_verification(self):
