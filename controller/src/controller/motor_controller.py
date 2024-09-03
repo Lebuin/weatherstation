@@ -119,20 +119,22 @@ class MotorController:
 
     def verify_position(self, orientation: util.Orientation):
         if self.current_position[orientation] == 0:
-            duration = self._get_movement_duration(1, 0)
-            logger.info(f'Verify roof {orientation} by closing ({duration:.0f}s)')
-            self._start_action(util.Movement(orientation, util.Direction.CLOSE), True)
+            logger.info(f'Verify roof {orientation} by closing')
+            self.set_target_position(orientation, -1)
+
         elif self.current_position[orientation] == 1:
-            duration = self._get_movement_duration(0, 1)
-            logger.info(f'Verify roof {orientation} by opening ({duration:.0f}s)')
-            self._start_action(util.Movement(orientation, util.Direction.OPEN), True)
+            logger.info(f'Verify roof {orientation} by opening')
+            self.set_target_position(orientation, 2)
 
 
-    def ensure_closed(self):
+    def ensure_closed(self, orientation: util.Orientation):
         # We don't simply set target position 0: we want to be really sure that the roofs do a
         # full closing cycle, even if our estimate of their current position is wrong.
+        self.set_target_position(orientation, self.current_position[orientation] - 1)
+
+    def ensure_all_closed(self):
         for orientation in util.Orientation:
-            self.set_target_position(orientation, self.current_position[orientation] - 1)
+            self.ensure_closed(orientation)
 
 
     def _check_end_current_action(self):
@@ -141,21 +143,13 @@ class MotorController:
 
         orientation = self.current_action.orientation
         current_position = self.current_position[orientation]
-        is_verification = self.current_action.is_verification
-
-        if is_verification:
-            target_position = (
-                self.last_stable_position[orientation]
-                + self.current_action.direction.sign
-            )
-
-        else:
-            target_position = self.target_position[orientation]
-            # If the target position is fully closed: let the roof run a few extra seconds. We want
-            # a tight fit when closing the roof, which isn't guaranteed after e.g. opening the roof
-            # for 20 seconds, and then closing it for 20 seconds.
-            if target_position <= 0:
-                target_position -= .02
+        target_position = self.target_position[orientation]
+        is_verification = self.target_position[orientation] in (-1, 2)
+        # If the target position is fully closed: let the roof run a few extra seconds. We want
+        # a tight fit when closing the roof, which isn't guaranteed after e.g. opening the roof
+        # for 20 seconds, and then closing it for 20 seconds.
+        if target_position <= 0:
+            target_position -= .02
 
         if (current_position - target_position) * self.current_action.direction.sign >= 0:
             logger.info(f'Roof {orientation} has reached target position {target_position:.2f}')

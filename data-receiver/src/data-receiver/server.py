@@ -1,9 +1,14 @@
 import json
+from datetime import datetime
 
 import fields
 import paho.mqtt.publish as publish
 from app import app
 from flask import abort, request
+
+from . import config
+
+past_reports = []
 
 
 def authorize():
@@ -44,6 +49,19 @@ def get_report(request):
             report[key] = field.get_value(request)
         except Exception as e:
             app.logger.exception(e)
+
+    now = datetime.now()
+    report['timestamp'] = now.isoformat()
+    past_reports.insert(0, report)
+
+    while now - datetime.fromisoformat(past_reports[-1]['timestamp']) > config.RAIN_EVENT_DURATION:
+        past_reports.pop()
+
+    rain_total = report.get('outdoor_rain_total', None)
+    past_rain_total = past_reports[-1].get('outdoor_rain_total', None)
+    if rain_total is not None and past_rain_total is not None:
+        report['outdoor_rain_event'] = rain_total - past_rain_total
+
     return report
 
 

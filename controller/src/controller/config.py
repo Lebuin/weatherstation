@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from datetime import timedelta
 
 from . import util
@@ -8,6 +9,7 @@ from .motor_io.keyboard import KeyboardIO
 from .motor_io.mqtt import MQTTIO
 
 MODE = util.Mode.GPIO
+LOG_LEVEL = logging.INFO
 
 # Each roof has a position between 0 (closed) and 1 (fully opened). Each position step has a range
 # of temperatures between which it is allowed. For example: if the roofs are at position .2, and
@@ -28,15 +30,19 @@ MANUAL_MOVEMENT_CURFEW = timedelta(hours=2)
 # and possibly opening the roofs as a result.
 HIGH_WIND = 45  # km/h
 HIGH_WIND_CURFEW = timedelta(minutes=30)
+# When the outdoor weather station is offline, we fall back to Open Meteo weather forecasts. The
+# indoor temperature is estimated to be 10˚C higher than the outside temperature, and we take a
+# safety margin on the wind speeds.
+WEATHER_FORECAST_VALIDITY = timedelta(minutes=60)
+FORECAST_WIND_MARGIN = 15  # km/h
+FORECAST_TEMPERATURE_SURPLUS = 10  # ˚C
 # When rain has fallen, the roofs should not be allowed to open fully, since this will cause them
 # to leak water into the greenhouse.
 RAIN_THRESHOLD = 2 # mm
 RAIN_CURFEW = timedelta(minutes=60)
-RAIN_MAX_POSITION = .85
-# If the last weather report is older than this, we assume the weather station is offline. Since
-# we can't know the outside windspeed anymore, we have to assume the worst and fully close the
-# roofs until we get another weather report.
-WEATHER_REPORT_VALIDITY = timedelta(minutes=30)
+RAIN_MAX_POSITION = .6
+# If the last weather report is older than this, we fall back to online weather forecasts.
+WEATHER_REPORT_VALIDITY = timedelta(minutes=15)
 
 # The time between application ticks
 TICK_INTERVAL = timedelta(milliseconds=100)
@@ -69,6 +75,8 @@ SEND_HEALTHCHECKS = True
 
 # Debug values
 # MODE = util.Mode.MQTT
+# LOG_LEVEL = logging.DEBUG
+# TICK_INTERVAL = timedelta(seconds=1)
 # SEND_HEALTHCHECKS = False
 # ROOF_VERIFICATION_ON_STARTUP = False
 # ROOF_MOVEMENT_DURATION = timedelta(seconds=10)

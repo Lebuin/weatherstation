@@ -10,8 +10,14 @@ charset-normalizer==3.3.2
     # via requests
 evdev==1.7.0
     # via pynput
+flatbuffers==24.3.25
+    # via openmeteo-sdk
 idna==3.7
     # via requests
+openmeteo-requests==1.3.0
+    # via -r requirements.in
+openmeteo-sdk==1.14.1
+    # via openmeteo-requests
 paho-mqtt==2.1.0
     # via -r requirements.in
 pynput==1.7.6
@@ -19,7 +25,9 @@ pynput==1.7.6
 python-xlib==0.33
     # via pynput
 requests==2.31.0
-    # via -r requirements.in
+    # via
+    #   -r requirements.in
+    #   openmeteo-requests
 six==1.16.0
     # via
     #   pynput

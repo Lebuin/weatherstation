@@ -7,38 +7,32 @@ import requests
 
 from . import config, util
 from .motor_controller import MotorController
-from .weather_monitor import WeatherMonitor
+from .weather_monitor import Datasource, WeatherMonitor, WeatherReport
 
 logger = logging.getLogger(__name__)
 
 
-class Emergency(enum.Enum):
-    NONE = 0
+class Status(enum.Enum):
+    OK = 0
     HIGH_WIND = 43
+    FORECAST_OFFLINE = 70
     WEATHERSTATION_OFFLINE = 30
-
-
-@dataclasses.dataclass
-class RainEvent:
-    timestamp: datetime
-    rain_total: float
+    WEATHERSTATION_OUTDOOR_OFFLINE = 130
 
 
 class Controller:
     weather_monitor: WeatherMonitor
     motor_controller: MotorController
 
-    emergency: Emergency = Emergency.NONE
+    startup_time = datetime.now()
+    status: Status = Status.OK
     # We only want each input press to be handled once, so we keep track of which ones we've
     # already handled.
     input_handled: set[util.Movement]
 
-    last_input: datetime = datetime(1, 1, 1)
+    last_manual_input: datetime = datetime(1, 1, 1)
     last_high_wind: datetime = datetime(1, 1, 1)
     last_healthcheck: datetime = datetime.now()
-    # This list contains the rain totals for the past hour, with the first element being the most
-    # recent event.
-    rain_history: list[RainEvent] = []
 
 
     def __init__(self):
@@ -50,12 +44,12 @@ class Controller:
     def tick(self):
         self.motor_controller.tick()
 
-        self.update_rain_history()
+        report = self.weather_monitor.get_report()
+        self.update_status(report)
 
-        self.update_emergency()
-        if self.emergency == Emergency.NONE:
-            self.do_manual_movements()
-            self.do_auto_movements()
+        self.do_limit_movements(report)
+        self.do_manual_movements(report)
+        self.do_temperature_movements(report)
 
         try:
             self.send_healthcheck()
@@ -63,29 +57,18 @@ class Controller:
             logger.error(e)
 
 
-    def curfew_is_ongoing(self, last_event: datetime, curfew: timedelta):
-        return datetime.now() - last_event < curfew
-
-
-    def rain_curfew_is_ongoing(self):
-        if len(self.rain_history) < 2:
-            return False
-
-        rain_fallen = self.rain_history[0].rain_total - self.rain_history[-1].rain_total
-        duration = self.rain_history[0].timestamp - self.rain_history[-1].timestamp
-        rain_rate = rain_fallen / duration.total_seconds() * 3600  # mm per hour
-        rain_threshold = config.RAIN_THRESHOLD / config.RAIN_CURFEW.total_seconds() * 3600
-
-        return rain_rate > rain_threshold
-
-
-    def get_platformed_position(self, position: float) -> float:
-        min_position = 0
-        if self.rain_curfew_is_ongoing():
-            max_position = config.RAIN_MAX_POSITION
+    def get_max_roof_position(self, report: WeatherReport):
+        if self.status in (Status.HIGH_WIND, Status.FORECAST_OFFLINE):
+            return 0
+        elif report.outdoor_rain_event is not None and report.outdoor_rain_event > config.RAIN_THRESHOLD:
+            return config.RAIN_MAX_POSITION
         else:
-            max_position = 1
+            return 1
 
+
+    def get_platformed_position(self, position: float, report: WeatherReport) -> float:
+        min_position = 0
+        max_position = self.get_max_roof_position(report)
         return min(max_position, max(min_position, position))
 
 
@@ -98,67 +81,73 @@ class Controller:
         return inputs
 
 
-    def update_rain_history(self):
-        if not self.weather_monitor.report:
-            return
+    def get_indoor_temperature(self, report: WeatherReport):
+        if report.indoor_temperature is not None:
+            return report.indoor_temperature
 
-        timestamp = self.weather_monitor.last_report_time
-        if (
-            len(self.rain_history) > 0
-            and timestamp == self.rain_history[0].timestamp
-        ):
-            return
+        elif report.outdoor_temperature is not None and report.outdoor_solar_radiation is not None:
+            outdoor_temperature = report.outdoor_temperature
+            indoor_bonus = 2
+            solar_bonus = report.outdoor_solar_radiation * .02
+            indoor_temperature = outdoor_temperature + indoor_bonus + solar_bonus
+            return indoor_temperature
 
-        rain_event = RainEvent(
-            timestamp=timestamp,
-            rain_total=self.weather_monitor.report['outdoor_rain_total']
-        )
-        self.rain_history.insert(0, rain_event)
-        while self.rain_history[0].timestamp < timestamp - config.RAIN_CURFEW:
-            self.rain_history.pop()
-
-
-        if self.rain_curfew_is_ongoing():
-            for orientation in util.Orientation:
-                if self.motor_controller.target_position[orientation] > config.RAIN_MAX_POSITION:
-                    logger.info(f'It has started raining, closing roof {orientation} to {config.RAIN_MAX_POSITION:.2f}')
-                    self.motor_controller.set_target_position(orientation, config.RAIN_MAX_POSITION)
-
-
-    def update_emergency(self):
-        if (
-            self.weather_monitor.report
-            and self.weather_monitor.report['outdoor_wind_gust'] > config.HIGH_WIND
-        ):
-            self.last_high_wind = self.weather_monitor.last_report_time
-
-        if self.weather_monitor.is_offline:
-            emergency = Emergency.WEATHERSTATION_OFFLINE
-        elif datetime.now() - self.last_high_wind < config.HIGH_WIND_CURFEW:
-            emergency = Emergency.HIGH_WIND
         else:
-            emergency = Emergency.NONE
-
-        if emergency != self.emergency:
-            if emergency != Emergency.NONE:
-                logger.info(f'We are in emergency {emergency}, closing all roofs')
-                self.motor_controller.ensure_closed()
-            else:
-                logger.info(f'Emergency {self.emergency} is over')
-        self.emergency = emergency
+            raise Exception('Can\'t calculate indoor temperature with missing outdoor report')
 
 
-    def do_auto_movements(self) -> None:
+    def update_status(self, report: WeatherReport):
+        if datetime.now() - self.startup_time < timedelta(minutes=2):
+            return
+
+        if report.outdoor_wind_gust is not None and report.outdoor_wind_gust > config.HIGH_WIND:
+            self.last_high_wind = report.timestamp
+
+        if datetime.now() - self.last_high_wind < config.HIGH_WIND_CURFEW:
+            status = Status.HIGH_WIND
+        elif report.outdoor_data_source is Datasource.NONE:
+            status = Status.FORECAST_OFFLINE
+        elif report.indoor_data_source is Datasource.NONE:
+            status = Status.WEATHERSTATION_OFFLINE
+        elif report.outdoor_data_source is not Datasource.WEATHERSTATION:
+            status = Status.WEATHERSTATION_OUTDOOR_OFFLINE
+        else:
+            status = Status.OK
+
+        if status != self.status:
+            logger.info(f'Changed from status {self.status} to {status}')
+            self.status = status
+
+
+    def do_limit_movements(self, report: WeatherReport) -> None:
+        """Ensure the roofs are not opened further than their maximum allowed position."""
+
+        max_position = self.get_max_roof_position(report)
+        for orientation in util.Orientation:
+            if self.motor_controller.target_position[orientation] > max_position:
+                if max_position == 0:
+                    self.motor_controller.ensure_closed(orientation)
+                else:
+                    self.motor_controller.set_target_position(orientation, max_position)
+
+
+    def do_temperature_movements(self, report: WeatherReport) -> None:
+        """Automatically open/close the roofs based on the indoor temperature."""
+
+        if datetime.now() - self.last_manual_input < config.MANUAL_MOVEMENT_CURFEW:
+            return
+
         if (
-            self.curfew_is_ongoing(self.last_input, config.MANUAL_MOVEMENT_CURFEW)
-            or not self.weather_monitor.report
+            report.indoor_data_source == Datasource.NONE
+            and report.outdoor_data_source == Datasource.NONE
         ):
             return
 
-        temperature = self.weather_monitor.report['indoor_temperature']
+        temperature = self.get_indoor_temperature(report)
+
         for orientation in util.Orientation:
             for i, step in enumerate(config.POSITION_STEPS[:-1]):
-                step_position = self.get_platformed_position(step.position)
+                step_position = self.get_platformed_position(step.position, report)
                 if (
                     self.motor_controller.target_position[orientation] > step_position
                     and temperature < config.POSITION_STEPS[i + 1].min_temperature
@@ -171,7 +160,7 @@ class Controller:
                     self.motor_controller.set_target_position(orientation, step_position)
 
             for i, step in reversed(list(enumerate(config.POSITION_STEPS))[1:]):
-                step_position = self.get_platformed_position(step.position)
+                step_position = self.get_platformed_position(step.position, report)
                 if (
                     self.motor_controller.target_position[orientation] < step_position
                     and temperature > config.POSITION_STEPS[i - 1].max_temperature
@@ -184,7 +173,9 @@ class Controller:
                     self.motor_controller.set_target_position(orientation, step_position)
 
 
-    def do_manual_movements(self) -> None:
+    def do_manual_movements(self, report: WeatherReport) -> None:
+        """Move the roofs based on movements received through the manual buttons."""
+
         inputs = self.read_inputs()
 
         for movement in util.Movement:
@@ -194,7 +185,7 @@ class Controller:
             elif movement not in self.input_handled:
                 logger.info(f'Got manual input: {movement}')
                 self.input_handled.add(movement)
-                self.last_input = datetime.now()
+                self.last_manual_input = datetime.now()
 
                 orientation = movement.orientation
                 direction = movement.direction
@@ -204,25 +195,23 @@ class Controller:
 
                 if movement_ongoing:
                     logger.info('Cancel ongoing movement')
-                    target_position = self.get_platformed_position(current_position)
+                    target_position = self.get_platformed_position(current_position, report)
 
                 elif direction == util.Direction.OPEN:
                     if current_position == 1:
                         # When someone presses the "open" button while we think the roof is
                         # already fully opened, it may be because in reality it's not fully opened.
-                        # So we set the target position out of bounds to ensure fully opening the
-                        # roof for real.
-                        target_position = 2
+                        self.motor_controller.verify_position(orientation)
                     else:
-                        target_position = self.get_platformed_position(1)
+                        target_position = self.get_platformed_position(1, report)
+                        self.motor_controller.set_target_position(orientation, target_position)
 
                 elif direction == util.Direction.CLOSE:
                     if current_position == 0:
-                        target_position = -1
+                        self.motor_controller.verify_position(orientation)
                     else:
-                        target_position = self.get_platformed_position(0)
-
-                self.motor_controller.set_target_position(orientation, target_position)
+                        target_position = self.get_platformed_position(0, report)
+                        self.motor_controller.set_target_position(orientation, target_position)
 
 
     def send_healthcheck(self) -> None:
@@ -233,11 +222,8 @@ class Controller:
             return
         self.last_healthcheck = datetime.now()
 
-        if self.emergency != Emergency.NONE:
-            status = self.emergency.value
-        else:
-            status = 0
+        status = self.status.value
         url = f'{config.HEALTHCHECK_URL}/{status}'
         requests.post(url)
 
-        logger.debug(f'Sent healthcheck with status {self.emergency.value} ({self.emergency})')
+        logger.debug(f'Sent healthcheck with status {self.status.value} ({self.status})')
