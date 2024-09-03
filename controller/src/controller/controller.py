@@ -226,14 +226,18 @@ class Controller:
 
 
     def send_healthcheck(self) -> None:
+        if not config.SEND_HEALTHCHECKS:
+            return
+
         if datetime.now() - self.last_healthcheck < config.HEALTHCHECK_INTERVAL:
             return
         self.last_healthcheck = datetime.now()
 
-        url = config.HEALTHCHECK_URL
         if self.emergency != Emergency.NONE:
-            url += f'/{self.emergency.value}'
+            status = self.emergency.value
+        else:
+            status = 0
+        url = f'{config.HEALTHCHECK_URL}/{status}'
+        requests.post(url)
 
-        if config.SEND_HEALTHCHECKS:
-            requests.post(url)
         logger.debug(f'Sent healthcheck with status {self.emergency.value} ({self.emergency})')
