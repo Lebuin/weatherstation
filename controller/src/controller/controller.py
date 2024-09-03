@@ -14,6 +14,7 @@ logger = logging.getLogger(__name__)
 
 class Status(enum.Enum):
     OK = 0
+    UNCAUGHT_EXCEPTION = 1
     HIGH_WIND = 43
     FORECAST_OFFLINE = 70
     WEATHERSTATION_OFFLINE = 30
@@ -42,19 +43,23 @@ class Controller:
 
 
     def tick(self):
-        self.motor_controller.tick()
-
-        report = self.weather_monitor.get_report()
-        self.update_status(report)
-
-        self.do_limit_movements(report)
-        self.do_manual_movements(report)
-        self.do_temperature_movements(report)
-
         try:
-            self.send_healthcheck()
+            self.motor_controller.tick()
+
+            report = self.weather_monitor.get_report()
+            self.update_status(report)
+
+            self.do_limit_movements(report)
+            self.do_manual_movements(report)
+            self.do_temperature_movements(report)
+
+            try:
+                self.send_healthcheck()
+            except Exception as e:
+                logger.error(e)
         except Exception as e:
-            logger.error(e)
+            self.send_healthcheck(Status.UNCAUGHT_EXCEPTION)
+            raise e
 
 
     def get_max_roof_position(self, report: WeatherReport):
@@ -214,7 +219,10 @@ class Controller:
                         self.motor_controller.set_target_position(orientation, target_position)
 
 
-    def send_healthcheck(self) -> None:
+    def send_healthcheck(self, status: Status | None=None) -> None:
+        if status is None:
+            status = self.status
+
         if not config.SEND_HEALTHCHECKS:
             return
 
@@ -222,8 +230,8 @@ class Controller:
             return
         self.last_healthcheck = datetime.now()
 
-        status = self.status.value
-        url = f'{config.HEALTHCHECK_URL}/{status}'
+
+        url = f'{config.HEALTHCHECK_URL}/{status.value}'
         requests.post(url)
 
-        logger.debug(f'Sent healthcheck with status {self.status.value} ({self.status})')
+        logger.debug(f'Sent healthcheck with status {status.value} ({status})')
