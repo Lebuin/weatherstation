@@ -36,7 +36,7 @@ WEATHER_FORECAST_VALIDITY = timedelta(minutes=60)
 WEATHER_FORECAST_WIND_MARGIN = 10  # km/h
 # When rain has fallen, the roofs should not be allowed to open fully, since this will cause them
 # to leak water into the greenhouse.
-RAIN_THRESHOLD = 2 # mm
+RAIN_THRESHOLD = .5 # mm
 RAIN_CURFEW = timedelta(minutes=60)
 RAIN_MAX_POSITION = .6
 # If the last weather report is older than this, we fall back to online weather forecasts.
