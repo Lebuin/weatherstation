@@ -118,11 +118,17 @@ class MotorController:
 
 
     def verify_position(self, orientation: util.Orientation):
-        if self.current_position[orientation] == 0:
+        if (
+            self.current_position[orientation] == 0
+            and self.target_position[orientation] == 0
+        ):
             logger.info(f'Verify roof {orientation} by closing')
             self.set_target_position(orientation, -1)
 
-        elif self.current_position[orientation] == 1:
+        elif (
+            self.current_position[orientation] == 1
+            and self.target_position[orientation] == 1
+        ):
             logger.info(f'Verify roof {orientation} by opening')
             self.set_target_position(orientation, 2)
 

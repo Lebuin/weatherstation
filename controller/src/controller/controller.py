@@ -132,7 +132,7 @@ class Controller:
             if self.motor_controller.target_position[orientation] > max_position:
                 if max_position == 0:
                     self.motor_controller.ensure_closed(orientation)
-                else:
+                elif max_position < 1:
                     self.motor_controller.set_target_position(orientation, max_position)
 
 
