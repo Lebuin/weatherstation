@@ -14,7 +14,6 @@ logger = logging.getLogger(__name__)
 class Action:
     movement: util.Movement
     start: datetime
-    is_verification: bool = False
 
     @property
     def orientation(self):
@@ -148,9 +147,10 @@ class MotorController:
             return
 
         orientation = self.current_action.orientation
+        last_stable_position = self.last_stable_position[orientation]
         current_position = self.current_position[orientation]
         target_position = self.target_position[orientation]
-        is_verification = self.target_position[orientation] in (-1, 2)
+        is_verification = abs(target_position - last_stable_position) >= 1
         # If the target position is fully closed: let the roof run a few extra seconds. We want
         # a tight fit when closing the roof, which isn't guaranteed after e.g. opening the roof
         # for 20 seconds, and then closing it for 20 seconds.
@@ -211,11 +211,11 @@ class MotorController:
 
 
 
-    def _start_action(self, movement, is_verification=False):
+    def _start_action(self, movement):
         if self.current_action:
             raise Exception(f'Tried to start an action, but {self.current_action} is ongoing')
 
-        self.current_action = Action(movement, datetime.now(), is_verification=is_verification)
+        self.current_action = Action(movement, datetime.now())
         self.write(movement, True)
 
 
