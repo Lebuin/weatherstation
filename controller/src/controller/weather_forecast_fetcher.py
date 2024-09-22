@@ -61,16 +61,19 @@ class WeatherForecastFetcher:
     def _fetch_forecast(self):
         logger.info('Fetch weather forecast')
 
-        openmeteo = openmeteo_requests.Client()
-        responses = openmeteo.weather_api(self.url, params=self.params)
-        response = responses[0]
-        hourly = response.Hourly()
+        try:
+            openmeteo = openmeteo_requests.Client()
+            responses = openmeteo.weather_api(self.url, params=self.params)
+            response = responses[0]
+            hourly = response.Hourly()
 
-        if hourly is None:
-            return
+            if hourly is None:
+                return
 
-        reports = self._parse_forecast(hourly)
-        return reports
+            reports = self._parse_forecast(hourly)
+            return reports
+        except Exception as e:
+            logger.exception(e)
 
 
     def _parse_forecast(self, hourly: VariablesWithTime):
