@@ -11,3 +11,8 @@ script: !include scripts.yaml
 scene: !include scenes.yaml
 
 rest: !include_dir_merge_list rest
+
+http:
+  use_x_forwarded_for: true
+  trusted_proxies:
+    - 192.168.113.2
