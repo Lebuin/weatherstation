@@ -78,15 +78,15 @@ MQTT_TOPIC_STATE = 'state'
 
 
 # Debug values
-MODE = util.Mode.MQTT
-LOG_LEVEL = logging.DEBUG
-TICK_INTERVAL = timedelta(seconds=1)
-SEND_HEALTHCHECKS = False
-ROOF_VERIFICATION_ON_STARTUP = False
-ROOF_MOVEMENT_DURATION = timedelta(seconds=10)
-WEATHER_REPORT_VALIDITY = timedelta(minutes=3)
-AUTO_MOVEMENT_CURFEW = timedelta(minutes=1)
-MANUAL_MOVEMENT_CURFEW = timedelta(minutes=2)
+# MODE = util.Mode.MQTT
+# LOG_LEVEL = logging.DEBUG
+# TICK_INTERVAL = timedelta(seconds=1)
+# SEND_HEALTHCHECKS = False
+# ROOF_VERIFICATION_ON_STARTUP = False
+# ROOF_MOVEMENT_DURATION = timedelta(seconds=10)
+# WEATHER_REPORT_VALIDITY = timedelta(minutes=3)
+# AUTO_MOVEMENT_CURFEW = timedelta(minutes=1)
+# MANUAL_MOVEMENT_CURFEW = timedelta(minutes=2)
 
 
 # The keyboard keys used to input in DEBUG mode
