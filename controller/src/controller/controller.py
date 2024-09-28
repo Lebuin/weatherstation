@@ -1,5 +1,5 @@
-import dataclasses
 import enum
+import json
 import logging
 from datetime import datetime, timedelta
 
@@ -7,6 +7,7 @@ import requests
 
 from . import config, util
 from .motor_controller import MotorController
+from .mqtt_client import MQTTClient
 from .weather_monitor import Datasource, WeatherMonitor, WeatherReport
 
 logger = logging.getLogger(__name__)
@@ -31,9 +32,11 @@ class Controller:
     # already handled.
     input_handled: set[util.Movement]
 
-    last_manual_input: datetime = datetime(1, 1, 1)
-    last_high_wind: datetime = datetime(1, 1, 1)
+    last_manual_input: datetime = datetime.fromtimestamp(0)
+    last_high_wind: datetime = datetime.fromtimestamp(0)
     last_healthcheck: datetime = datetime.now()
+
+    last_state_published: datetime = datetime.fromtimestamp(0)
 
 
     def __init__(self):
@@ -52,6 +55,8 @@ class Controller:
             self.do_limit_movements(report)
             self.do_manual_movements(report)
             self.do_temperature_movements(report)
+
+            self.publish_state(report)
 
             try:
                 self.send_healthcheck()
@@ -217,6 +222,62 @@ class Controller:
                     else:
                         target_position = self.get_platformed_position(0, report)
                         self.motor_controller.set_target_position(orientation, target_position)
+
+
+    def publish_state(self, report: WeatherReport) -> None:
+        if datetime.now() - self.last_state_published < config.STATE_PUBLISH_INTERVAL:
+            return
+
+        self.do_publish_state(report)
+        self.last_state_published = datetime.now()
+
+
+    def do_publish_state(self, report: WeatherReport) -> None:
+        mqtt_client = MQTTClient()
+
+        if report.indoor_data_source is None and report.outdoor_data_source is None:
+            indoor_temperature = None
+        else:
+            indoor_temperature = self.get_indoor_temperature(report)
+
+        message: dict = {
+            'timestamp': datetime.now(),
+            'status': self.status,
+
+            'last_manual_input': self.last_manual_input,
+            'last_high_wind': self.last_high_wind,
+            'last_healthcheck': self.last_healthcheck,
+
+            'weather_report': {
+                'timestamp': report.timestamp,
+
+                'indoor': {
+                    'data_source': report.indoor_data_source,
+                    'temperature': util.round_or_none(indoor_temperature, 1),
+                },
+
+                'outdoor': {
+                    'data_source': report.outdoor_data_source,
+                    'temperature': util.round_or_none(report.outdoor_temperature, 1),
+                    'wind_gust': util.round_or_none(report.outdoor_wind_gust, 1),
+                    'rain_event': util.round_or_none(report.outdoor_rain_event, 1),
+                    'solar_radiation': util.round_or_none(report.outdoor_solar_radiation, 0),
+                }
+            },
+
+
+            'roofs': {},
+        }
+
+        for orientation in util.Orientation:
+            message['roofs'][orientation.name.lower()] = {
+                'position': self.motor_controller.current_position[orientation],
+                'target': self.motor_controller.target_position[orientation],
+                'last_verification': self.motor_controller.last_verification[orientation],
+            }
+
+        data = json.dumps(message, cls=util.JSONEncoder)
+        mqtt_client.publish(config.MQTT_TOPIC_STATE, data, retain=True)
 
 
     def send_healthcheck(self, status: Status | None=None) -> None:

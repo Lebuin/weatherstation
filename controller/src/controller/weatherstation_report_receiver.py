@@ -23,7 +23,7 @@ class WeatherstationReportReceiver:
 
     def __init__(self):
         self.mqtt_client = MQTTClient()
-        self.mqtt_client.subscribe(config.MQTT_REPORT_TOPIC, self._on_mqtt_message)
+        self.mqtt_client.subscribe(config.MQTT_TOPIC_REPORT, self._on_mqtt_message)
 
 
     def get_report(self):

@@ -10,7 +10,8 @@ MQTT_CLIENT_ID = 'data-receiver'
 MQTT_USERNAME = 'data-receiver'
 MQTT_PASSWORD = '7RPV2vWfD2rJgS9u'
 MQTT_TOPIC_PREFIX = 'weatherstation'
-MQTT_TOPIC = 'report'
+MQTT_TOPIC_REPORT = 'report'
+MQTT_TOPIC_STATE = 'state'
 
 
 RAIN_EVENT_DURATION = timedelta(hours=1)

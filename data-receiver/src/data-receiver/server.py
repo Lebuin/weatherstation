@@ -2,9 +2,9 @@ import json
 from datetime import datetime
 
 import fields
-import paho.mqtt.publish as publish
 from app import app
 from flask import abort, request
+from paho.mqtt import publish, subscribe
 
 from . import config
 
@@ -67,7 +67,7 @@ def get_report(request):
 
 def publish_report(report):
     payload = json.dumps(report)
-    topic = app.config['MQTT_TOPIC']
+    topic = app.config['MQTT_TOPIC_REPORT']
     if app.config['MQTT_TOPIC_PREFIX']:
         topic = app.config['MQTT_TOPIC_PREFIX'] +'/' + topic
 
@@ -84,6 +84,26 @@ def publish_report(report):
     )
 
 
+def get_state():
+    topic = app.config['MQTT_TOPIC_STATE']
+    if app.config['MQTT_TOPIC_PREFIX']:
+        topic = app.config['MQTT_TOPIC_PREFIX'] +'/' + topic
+
+    mqtt_message = subscribe.simple(
+        topic,
+        hostname=app.config['MQTT_HOST'],
+        port=app.config['MQTT_PORT'],
+        client_id=app.config['MQTT_CLIENT_ID'],
+        auth={
+            'username': app.config['MQTT_USERNAME'],
+            'password': app.config['MQTT_PASSWORD'],
+        },
+    )
+
+    state = json.loads(mqtt_message.payload)
+    return state
+
+
 @app.route('/report', methods=['GET'])
 def report():
     authorize()
@@ -92,6 +112,13 @@ def report():
     publish_report(report)
 
     return 'OK'
+
+
+@app.route('/state', methods=['GET'])
+def state():
+    state = get_state()
+    app.logger.debug('Publishing state: {state}')
+    return state
 
 
 app.logger.debug('data-receiver server started')

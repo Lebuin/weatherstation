@@ -58,6 +58,12 @@ ROOF_VERIFICATION_ON_STARTUP = True
 # their phones. In known emergency situations, we explicitly send a nonzero status.
 HEALTHCHECK_INTERVAL = timedelta(minutes=5)
 HEALTHCHECK_URL = 'https://hc-ping.com/9ce41add-4bd4-484b-95f5-a27312fcde0f'
+SEND_HEALTHCHECKS = True
+
+
+# We publish our state (current roof position, weather data and source,...). This is picked up
+# by the data-receiver service and published on an API endpoint for display in Home Assistant.
+STATE_PUBLISH_INTERVAL = timedelta(seconds=10)
 
 
 MQTT_HOST = 'mosquitto'
@@ -66,21 +72,21 @@ MQTT_CLIENT_ID = 'controller'
 MQTT_USERNAME = 'controller'
 MQTT_PASSWORD = 'Kl7sJuVJnZ33BtW'
 MQTT_TOPIC_PREFIX = 'weatherstation'
-MQTT_REPORT_TOPIC = 'report'
+MQTT_TOPIC_REPORT = 'report'
+MQTT_TOPIC_STATE = 'state'
 
-SEND_HEALTHCHECKS = True
 
 
 # Debug values
-# MODE = util.Mode.MQTT
-# LOG_LEVEL = logging.DEBUG
-# TICK_INTERVAL = timedelta(seconds=1)
-# SEND_HEALTHCHECKS = False
-# ROOF_VERIFICATION_ON_STARTUP = False
-# ROOF_MOVEMENT_DURATION = timedelta(seconds=10)
-# WEATHER_REPORT_VALIDITY = timedelta(minutes=3)
-# AUTO_MOVEMENT_CURFEW = timedelta(minutes=1)
-# MANUAL_MOVEMENT_CURFEW = timedelta(minutes=2)
+MODE = util.Mode.MQTT
+LOG_LEVEL = logging.DEBUG
+TICK_INTERVAL = timedelta(seconds=1)
+SEND_HEALTHCHECKS = False
+ROOF_VERIFICATION_ON_STARTUP = False
+ROOF_MOVEMENT_DURATION = timedelta(seconds=10)
+WEATHER_REPORT_VALIDITY = timedelta(minutes=3)
+AUTO_MOVEMENT_CURFEW = timedelta(minutes=1)
+MANUAL_MOVEMENT_CURFEW = timedelta(minutes=2)
 
 
 # The keyboard keys used to input in DEBUG mode

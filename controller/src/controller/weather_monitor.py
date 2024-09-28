@@ -9,7 +9,7 @@ from .weatherstation_report_receiver import (WeatherstationReport,
 logger = logging.getLogger(__name__)
 
 
-DEFAULT_TIMESTAMP = datetime(1, 1, 1)
+DEFAULT_TIMESTAMP = datetime.fromtimestamp(0)
 
 class Datasource(enum.Enum):
     WEATHERSTATION = enum.auto()

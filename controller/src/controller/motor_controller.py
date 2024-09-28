@@ -44,8 +44,8 @@ class MotorController:
         }
         if config.ROOF_VERIFICATION_ON_STARTUP:
             self.last_verification = {
-                util.Orientation.NORTH: datetime(1, 1, 1),
-                util.Orientation.SOUTH: datetime(1, 1, 1),
+                util.Orientation.NORTH: datetime.fromtimestamp(0),
+                util.Orientation.SOUTH: datetime.fromtimestamp(0),
             }
         else:
             self.last_verification = {

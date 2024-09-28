@@ -8,10 +8,6 @@ from . import config, util
 
 logger = logging.getLogger(__name__)
 
-__all__ = (
-    'mqtt_client',
-)
-
 
 class MQTTException(Exception):
     pass
