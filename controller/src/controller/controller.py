@@ -242,14 +242,17 @@ class Controller:
 
         message: dict = {
             'timestamp': datetime.now(),
-            'status': self.status,
 
-            'last_manual_input': self.last_manual_input,
-            'last_high_wind': self.last_high_wind,
-            'last_healthcheck': self.last_healthcheck,
+            'status': {
+                'status': self.status,
+
+                'last_manual_input': util.datetime_or_none(self.last_manual_input),
+                'last_high_wind': util.datetime_or_none(self.last_high_wind),
+                'last_healthcheck': util.datetime_or_none(self.last_healthcheck),
+            },
 
             'weather_report': {
-                'timestamp': report.timestamp,
+                'timestamp': util.datetime_or_none(report.timestamp),
 
                 'indoor': {
                     'data_source': report.indoor_data_source,
@@ -273,7 +276,7 @@ class Controller:
             message['roofs'][orientation.name.lower()] = {
                 'position': self.motor_controller.current_position[orientation],
                 'target': self.motor_controller.target_position[orientation],
-                'last_verification': self.motor_controller.last_verification[orientation],
+                'last_verification': util.datetime_or_none(self.motor_controller.last_verification[orientation]),
             }
 
         data = json.dumps(message, cls=util.JSONEncoder)

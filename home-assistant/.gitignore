@@ -1,1 +1,3 @@
-/config
+/config/*
+!/config/*.yaml
+!/config/rest

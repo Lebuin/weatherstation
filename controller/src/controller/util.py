@@ -94,3 +94,10 @@ def round_or_none(n: float | None, precision: int):
         return None
     else:
         return round(n, precision)
+
+
+def datetime_or_none(dt: datetime):
+    if dt.timestamp() == 0:
+        return None
+    else:
+        return dt
