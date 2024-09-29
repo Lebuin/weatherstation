@@ -251,6 +251,13 @@ class Controller:
                 'last_healthcheck': util.datetime_or_none(self.last_healthcheck),
             },
 
+            'parameters': {
+                'min_temperature': config.POSITION_STEPS[1].min_temperature,
+                'max_temperature': config.POSITION_STEPS[-2].max_temperature,
+                'high_wind': config.HIGH_WIND,
+                'rain_threshold': config.RAIN_THRESHOLD,
+            },
+
             'weather_report': {
                 'timestamp': util.datetime_or_none(report.timestamp),
 
