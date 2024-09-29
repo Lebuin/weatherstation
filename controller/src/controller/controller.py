@@ -281,8 +281,8 @@ class Controller:
 
         for orientation in util.Orientation:
             message['roofs'][orientation.name.lower()] = {
-                'position': self.motor_controller.current_position[orientation],
-                'target': self.motor_controller.target_position[orientation],
+                'position': max(0, min(1, self.motor_controller.current_position[orientation])),
+                'target': max(0, min(1, self.motor_controller.target_position[orientation])),
                 'last_verification': util.datetime_or_none(self.motor_controller.last_verification[orientation]),
             }
 
