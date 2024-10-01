@@ -30,10 +30,8 @@ MANUAL_MOVEMENT_CURFEW = timedelta(hours=2)
 # and possibly opening the roofs as a result.
 HIGH_WIND = 45  # km/h
 HIGH_WIND_CURFEW = timedelta(minutes=30)
-# When the outdoor weather station is offline, we fall back to Open Meteo weather forecasts. We
-# take a big safety margin on the wind speeds.
+# When the outdoor weather station is offline, we fall back to Open Meteo weather forecasts.
 WEATHER_FORECAST_VALIDITY = timedelta(minutes=60)
-WEATHER_FORECAST_WIND_MARGIN = 10  # km/h
 # When rain has fallen, the roofs should not be allowed to open fully, since this will cause them
 # to leak water into the greenhouse.
 RAIN_THRESHOLD = .5 # mm
