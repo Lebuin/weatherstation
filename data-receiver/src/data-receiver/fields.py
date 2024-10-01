@@ -5,7 +5,7 @@ class Base:
 
     def get_value(self, request):
         data = request.args.get(self.name, None)
-        if data is None or data == -9999:
+        if data is None or data == '-9999':
             raise ValueError(f'Parameter {self.name} not found')
         return self.parse(data)
 
