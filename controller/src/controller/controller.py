@@ -270,7 +270,7 @@ class Controller:
                     'data_source': report.outdoor_data_source,
                     'temperature': util.round_or_none(report.outdoor_temperature, 1),
                     'wind_gust': util.round_or_none(report.outdoor_wind_gust, 1),
-                    'rain_event': util.round_or_none(report.outdoor_rain_event, 1),
+                    'rain_event': util.round_or_none(report.outdoor_rain_event, 2),
                     'solar_radiation': util.round_or_none(report.outdoor_solar_radiation, 0),
                 }
             },
