@@ -13,8 +13,8 @@ past_reports = []
 
 def authorize():
     if (
-        request.args.get('ID', None) != app.config['STATION_ID']
-        or request.args.get('PASSWORD', None) != app.config['STATION_KEY']
+        request.args.get('ID') != app.config['STATION_ID']
+        or request.args.get('PASSWORD') != app.config['STATION_KEY']
     ):
         abort(403)
 
@@ -121,4 +121,4 @@ def state():
     return state
 
 
-app.logger.debug('data-receiver server started')
+app.logger.info('Server started')

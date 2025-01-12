@@ -16,7 +16,6 @@ logger = logging.getLogger(__name__)
 class Status(enum.Enum):
     OK = 0
     UNCAUGHT_EXCEPTION = 1
-    HIGH_WIND = 43
     FORECAST_OFFLINE = 70
     WEATHERSTATION_OFFLINE = 30
     WEATHERSTATION_OUTDOOR_OFFLINE = 130
@@ -50,6 +49,7 @@ class Controller:
             self.motor_controller.tick()
 
             report = self.weather_monitor.get_report()
+            self.update_last_high_wind(report)
             self.update_status(report)
 
             self.do_limit_movements(report)
@@ -68,9 +68,15 @@ class Controller:
 
 
     def get_max_roof_position(self, report: WeatherReport):
-        if self.status in (Status.HIGH_WIND, Status.FORECAST_OFFLINE):
+        if (
+            self.status == Status.FORECAST_OFFLINE
+            or datetime.now() - self.last_high_wind < config.HIGH_WIND_CURFEW
+        ):
             return 0
-        elif report.outdoor_rain_event is not None and report.outdoor_rain_event > config.RAIN_THRESHOLD:
+        elif (
+            report.outdoor_rain_event is not None
+            and report.outdoor_rain_event > config.RAIN_THRESHOLD
+        ):
             return config.RAIN_MAX_POSITION
         else:
             return 1
@@ -106,16 +112,16 @@ class Controller:
             raise Exception('Can\'t calculate indoor temperature with missing outdoor report')
 
 
+    def update_last_high_wind(self, report: WeatherReport):
+        if report.outdoor_wind_gust is not None and report.outdoor_wind_gust > config.HIGH_WIND:
+            self.last_high_wind = report.timestamp
+
+
     def update_status(self, report: WeatherReport):
         if datetime.now() - self.startup_time < timedelta(minutes=2):
             return
 
-        if report.outdoor_wind_gust is not None and report.outdoor_wind_gust > config.HIGH_WIND:
-            self.last_high_wind = report.timestamp
-
-        if datetime.now() - self.last_high_wind < config.HIGH_WIND_CURFEW:
-            status = Status.HIGH_WIND
-        elif report.outdoor_data_source is Datasource.NONE:
+        if report.outdoor_data_source is Datasource.NONE:
             status = Status.FORECAST_OFFLINE
         elif report.indoor_data_source is Datasource.NONE:
             status = Status.WEATHERSTATION_OFFLINE
