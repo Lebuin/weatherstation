@@ -1,9 +1,12 @@
 import dataclasses
 import json
+import logging
 from datetime import datetime
 
 from . import config
 from .mqtt_client import MQTTClient
+
+logger = logging.getLogger(__name__)
 
 
 @dataclasses.dataclass
@@ -37,10 +40,11 @@ class WeatherstationReportReceiver:
         message = json.loads(data)
         report = WeatherstationReport(
             timestamp=datetime.fromisoformat(message['timestamp']),
-            indoor_temperature=message.get('indoor_temperature', None),
-            outdoor_temperature=message.get('outdoor_temperature', None),
-            outdoor_wind_gust=message.get('outdoor_wind_gust', None),
-            outdoor_rain_event=message.get('outdoor_rain_event', None),
-            outdoor_solar_radiation=message.get('outdoor_solar_radiation', None),
+            indoor_temperature=message.get('indoor_temperature'),
+            outdoor_temperature=message.get('outdoor_temperature'),
+            outdoor_wind_gust=message.get('outdoor_wind_gust'),
+            outdoor_rain_event=message.get('outdoor_rain_event'),
+            outdoor_solar_radiation=message.get('outdoor_solar_radiation'),
         )
         self.report = report
+        logger.debug(f'Received weather report: {report}')
