@@ -9,7 +9,7 @@ from .motor_io.keyboard import KeyboardIO
 from .motor_io.mqtt import MQTTIO
 
 MODE = util.Mode.GPIO
-LOG_LEVEL = logging.INFO
+LOG_LEVEL = logging.DEBUG
 
 # Each roof has a position between 0 (closed) and 1 (fully opened). Each position step has a range
 # of temperatures between which it is allowed. For example: if the roofs are at position .2, and
