@@ -33,7 +33,7 @@ class WeatherReport:
         if self.timestamp == DEFAULT_TIMESTAMP:
             self.timestamp = station_report.timestamp
 
-        if station_report.indoor_temperature:
+        if station_report.indoor_temperature is not None:
             self.indoor_data_source = Datasource.WEATHERSTATION
             self.indoor_temperature = station_report.indoor_temperature
 
