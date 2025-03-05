@@ -212,6 +212,7 @@ class Controller:
                 if movement_ongoing:
                     logger.info('Cancel ongoing movement')
                     target_position = self.get_platformed_position(current_position, report)
+                    self.motor_controller.set_target_position(orientation, target_position)
 
                 elif direction == util.Direction.OPEN:
                     if current_position == 1:
