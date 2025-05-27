@@ -310,6 +310,6 @@ class Controller:
 
 
         url = f'{config.HEALTHCHECK_URL}/{status.value}'
-        requests.post(url)
+        requests.post(url, timeout=60)
 
         logger.debug(f'Sent healthcheck with status {status.value} ({status})')
