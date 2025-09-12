@@ -117,7 +117,7 @@ def report():
 @app.route('/state', methods=['GET'])
 def state():
     state = get_state()
-    app.logger.debug('Publishing state: {state}')
+    app.logger.debug('Get state: {state}')
     return state
 
 

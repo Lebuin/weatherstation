@@ -1,8 +1,8 @@
-FROM ghcr.io/linuxserver/baseimage-alpine:3.18
+FROM ghcr.io/linuxserver/baseimage-alpine:3.22
 
 RUN apk add --no-cache \
-    python3 \
-    py3-pip \
+  python3 \
+  py3-pip \
   && rm -rf /tmp/* /root/.cache
 
 COPY root /
