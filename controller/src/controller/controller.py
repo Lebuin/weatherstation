@@ -33,6 +33,7 @@ class Controller:
 
     last_manual_input: datetime = datetime.fromtimestamp(0)
     last_high_wind: datetime = datetime.fromtimestamp(0)
+    last_outdoor_report: datetime = datetime.fromtimestamp(0)
     last_healthcheck: datetime = datetime.now()
 
     last_state_published: datetime = datetime.fromtimestamp(0)
@@ -49,7 +50,6 @@ class Controller:
             self.motor_controller.tick()
 
             report = self.weather_monitor.get_report()
-            self.update_last_high_wind(report)
             self.update_status(report)
 
             self.do_limit_movements(report)
@@ -112,12 +112,13 @@ class Controller:
             raise Exception('Can\'t calculate indoor temperature with missing outdoor report')
 
 
-    def update_last_high_wind(self, report: WeatherReport):
+    def update_status(self, report: WeatherReport):
         if report.outdoor_wind_gust is not None and report.outdoor_wind_gust > config.HIGH_WIND:
             self.last_high_wind = report.timestamp
 
+        if report.outdoor_data_source is Datasource.WEATHERSTATION:
+            self.last_outdoor_report = report.timestamp
 
-    def update_status(self, report: WeatherReport):
         if datetime.now() - self.startup_time < timedelta(minutes=2):
             return
 
@@ -125,7 +126,10 @@ class Controller:
             status = Status.FORECAST_OFFLINE
         elif report.indoor_data_source is Datasource.NONE:
             status = Status.WEATHERSTATION_OFFLINE
-        elif report.outdoor_data_source is not Datasource.WEATHERSTATION:
+        elif (
+            report.outdoor_data_source is not Datasource.WEATHERSTATION
+            and report.timestamp - self.last_outdoor_report > config.WEATHER_REPORT_VALIDITY
+        ):
             status = Status.WEATHERSTATION_OUTDOOR_OFFLINE
         else:
             status = Status.OK
