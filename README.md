@@ -58,8 +58,15 @@ sudo apt install -y autossh
 sudo systemctl enable --now autossh
 ```
 
-* On lenders.dev, make sure the line `GatewayPorts yes` is added to `/etc/ssh/sshd_config` (NOT
-  `/etc/ssh/ssh_config`) and run `sudo systemctl restart ssh`
+* On lenders.dev, make sure the following lines are added to `/etc/ssh/sshd_config` (NOT
+  `/etc/ssh/ssh_config`) and run `sudo systemctl restart ssh`:
+
+```
+GatewayPorts yes
+ClientAliveInterval 10
+ClientAliveCountMax 3
+```
+
 * Now you should be able to do `ssh orangepi@lenders.dev -p 8023` from your local machine
 
 ## Install the controller app
