@@ -81,7 +81,7 @@ class WeatherForecastFetcher:
         start = datetime.fromtimestamp(hourly.Time())
         end = datetime.fromtimestamp(hourly.TimeEnd())
         interval = timedelta(seconds=hourly.Interval())
-        for i in range(int((end - start) / interval)):
+        for i in range(int((end - start) / interval) - 1):
             temperature = hourly.Variables(self.params['hourly'].index('temperature_2m')).Values(i)  # type: ignore
             wind_gust = hourly.Variables(self.params['hourly'].index('wind_gusts_10m')).Values(i)   # type: ignore
             precipitation = hourly.Variables(self.params['hourly'].index('precipitation')).Values(i)  # type: ignore
