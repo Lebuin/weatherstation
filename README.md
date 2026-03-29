@@ -2,7 +2,7 @@
 
 ## Installation
 
-* Download the most recent [OrangePi Ubuntu image](https://drive.google.com/drive/folders/1KzyzyByev-fpZat7yvgYz1omOqFFqt1k)
+* Download the most recent [OrangePi Ubuntu server image](https://drive.google.com/drive/folders/1KzyzyByev-fpZat7yvgYz1omOqFFqt1k)
 * Flash it to an SD card using [balenaEtcher](https://etcher.balena.io/#download-etcher)
 * Set up the Wifi network to connect to on first boot: Navigate to the /boot folder of the SD card (this folder is owned by root, so you need root access), copy the file `orangepi_first_run.txt.template` to `orangepi_first_run.txt`, and add the following lines to the end of the file:
 
