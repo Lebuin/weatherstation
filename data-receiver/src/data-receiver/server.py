@@ -31,7 +31,6 @@ report_fields = {
     'outdoor_rain_daily': fields.Rain('dailyrainin'),
     'outdoor_rain_weekly': fields.Rain('weeklyrainin'),
     'outdoor_rain_monthly': fields.Rain('monthlyrainin'),
-    'outdoor_rain_yearly': fields.Rain('yearlyrainin'),
     'outdoor_rain_total': fields.Rain('totalrainin'),
     'outdoor_solar_radiation': fields.SolarRadiation('solarradiation'),
     'outdoor_uv': fields.UV('UV'),
