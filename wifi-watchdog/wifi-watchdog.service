@@ -1,0 +1,9 @@
+[Unit]
+Description=WiFi watchdog
+Wants=NetworkManager.service
+After=NetworkManager.service
+
+[Service]
+Type=oneshot
+ExecStart=/bin/bash /usr/local/bin/wifi-watchdog.sh
+TimeoutStartSec=90s

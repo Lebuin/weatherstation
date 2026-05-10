@@ -69,6 +69,49 @@ ClientAliveCountMax 3
 
 * Now you should be able to do `ssh orangepi@lenders.dev -p 8023` from your local machine
 
+## Install the WiFi watchdog
+
+The WiFi watchdog checks connectivity every 2 minutes. If connectivity is down, it first asks NetworkManager to reconnect WiFi, then restarts NetworkManager, and only reboots after repeated failed recovery attempts.
+
+From the cloned `weatherstation` repository on the OPI, run:
+
+```
+sudo install -m 0755 wifi-watchdog/wifi-watchdog.sh /usr/local/bin/wifi-watchdog.sh
+sudo install -m 0644 wifi-watchdog/wifi-watchdog.service /etc/systemd/system/wifi-watchdog.service
+sudo install -m 0644 wifi-watchdog/wifi-watchdog.timer /etc/systemd/system/wifi-watchdog.timer
+sudo systemctl daemon-reload
+sudo systemctl enable --now wifi-watchdog.timer
+```
+
+Check that the timer is active:
+
+```
+systemctl list-timers wifi-watchdog.timer
+systemctl status wifi-watchdog.timer
+```
+
+The script assumes the WiFi interface is `wlan0` and checks the default gateway for that interface. If needed, configure overrides with systemd service environment variables, then reload and restart the timer:
+
+```
+sudo systemctl edit wifi-watchdog.service
+```
+
+For example:
+
+```
+[Service]
+Environment=INTERFACE=wlan0
+Environment=PING_TARGETS="192.168.1.1 1.1.1.1"
+Environment=FAILURE_THRESHOLD=3
+```
+
+Then apply the change:
+
+```
+sudo systemctl daemon-reload
+sudo systemctl restart wifi-watchdog.timer
+```
+
 ## Install the controller app
 
 * Install [WiringOP](https://github.com/orangepi-xunlong/wiringOP).
